@@ -10,6 +10,14 @@
   const rejilla = $("#rejilla");
   const bgDots = $(".bg-dots");
   const destello = $(".destello");
+
+  // Color de las barras del navegador del móvil (arriba y abajo): sigue al fondo de
+  // cada pantalla, que sale de los tokens de styles.css. Si no, se quedan en el verde de la portada.
+  const metaColor = document.querySelector('meta[name="theme-color"]');
+  function colorBarras(variable) {
+    const c = getComputedStyle(document.documentElement).getPropertyValue(variable).trim();
+    if (c && metaColor) metaColor.setAttribute("content", c);
+  }
   const cabecera = $(".cal-cabecera");
   const modal = $("#modal");
   const toastEl = $("#toast");
@@ -380,6 +388,7 @@
     portada.hidden = true;
     calendario.hidden = false;
     document.body.classList.add("en-calendario");
+    colorBarras("--fondo-cal");
     window.scrollTo(0, 0);
 
     // El fondo de puntos vuelve a su estado normal para el parallax del calendario
@@ -425,6 +434,7 @@
     calendario.hidden = true;
     portada.hidden = false;
     document.body.classList.remove("en-calendario");
+    colorBarras("--fondo-portada");
     btnSaltar.hidden = false;
     window.scrollTo(0, 0);
     reiniciarCamara();
