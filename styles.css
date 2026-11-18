@@ -3,7 +3,7 @@
    ============================================================ */
 
 :root {
-  --fondo-portada: #0e1512;
+  --fondo-portada: #086a39;
   --fondo-cal: #150a0c;
   --punto: rgba(255, 245, 235, 0.32);
 
@@ -12,6 +12,7 @@
   --crema: #f4eeeb;
   --rosado: #ead9db;
   --granate: #3b0d14;
+  --vino: #74192b; /* granate de las casillas: más vivo para separarse del fondo */
   --granate-txt: #5a1620;
   --verde: #2f7a5a;
   --verde-claro: #5fa98a;
@@ -60,6 +61,52 @@ button { font: inherit; color: inherit; }
   will-change: transform;
 }
 
+/* ---------- Fondo animado del calendario: luces granates que se desplazan despacio + nieve ---------- */
+.aurora {
+  position: fixed;
+  inset: -25%;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 2.5s ease;
+}
+body.en-calendario .aurora { opacity: 1; }
+.aurora::before,
+.aurora::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  will-change: transform;
+}
+.aurora::before {
+  background:
+    radial-gradient(ellipse 40% 35% at 30% 30%, rgba(176, 38, 52, 0.26), transparent 70%),
+    radial-gradient(ellipse 35% 30% at 75% 65%, rgba(120, 22, 40, 0.4), transparent 70%);
+  animation: deriva-a 34s ease-in-out infinite alternate;
+}
+.aurora::after {
+  background:
+    radial-gradient(ellipse 30% 25% at 65% 20%, rgba(255, 190, 120, 0.09), transparent 70%),
+    radial-gradient(ellipse 35% 30% at 20% 80%, rgba(150, 34, 56, 0.28), transparent 70%);
+  animation: deriva-b 46s ease-in-out infinite alternate;
+}
+@keyframes deriva-a {
+  from { transform: translate3d(-4%, -3%, 0) scale(1); }
+  to { transform: translate3d(5%, 4%, 0) scale(1.12); }
+}
+@keyframes deriva-b {
+  from { transform: translate3d(5%, 3%, 0) rotate(0deg); }
+  to { transform: translate3d(-5%, -4%, 0) rotate(6deg); }
+}
+
+.nieve {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
 .kicker {
   margin: 0;
   font-size: 12px;
@@ -86,6 +133,21 @@ button { font: inherit; color: inherit; }
   overflow: hidden;
 }
 
+/* Viñeta negra en los bordes. Va como primer elemento de la portada, así queda por
+   debajo del texto, la puerta y la nieve. Para más/menos efecto, cambia los 0.42 y 0.16. */
+.portada::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse farthest-corner at 50% 50%,
+    rgba(0, 0, 0, 0) 45%,
+    rgba(0, 0, 0, 0.16) 75%,
+    rgba(0, 0, 0, 0.42) 100%
+  );
+}
+
 .portada-luz {
   position: absolute;
   inset: 0;
@@ -108,16 +170,40 @@ button { font: inherit; color: inherit; }
 .copo {
   position: absolute;
   border-radius: 50%;
-  background: radial-gradient(circle, #fff8ef 0 45%, rgba(255, 248, 239, 0) 70%);
-  animation: caer linear infinite;
+  /* centro sólido y borde suave: se lee como copo y no como polvo */
+  background: radial-gradient(circle, #fff8ef 0 58%, rgba(255, 248, 239, 0) 72%);
+  /* caída en vertical + vaivén lateral (propiedad `translate`, independiente) */
+  animation-name: caer, vaiven;
+  animation-timing-function: linear, ease-in-out;
+  animation-direction: normal, alternate;
+  animation-iteration-count: infinite;
 }
-.capa-lejos .copo { opacity: 0.35; }
-.capa-media .copo { opacity: 0.7; }
-.capa-cerca .copo { opacity: 0.8; background: radial-gradient(circle, rgba(255, 248, 239, 0.9) 0, rgba(255, 248, 239, 0) 70%); }
+/* Cristal de nieve que gira despacio mientras cae */
+.copo.cristal {
+  border-radius: 0;
+  background: none;
+}
+/* El giro va en un elemento interior: si rotase el mismo elemento que cae, la
+   caída (que se aplica por dentro de la rotación) giraría con él y el cristal
+   derivaría en círculos en vez de bajar. */
+.copo.cristal::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%3E%3Cg%20fill='none'%20stroke='white'%20stroke-width='1.9'%20stroke-linecap='round'%20stroke-linejoin='round'%3E%3Cpath%20d='M12%202V22M9.4%204L12%206.6L14.6%204M9.4%2020L12%2017.4L14.6%2020'/%3E%3Cpath%20transform='rotate(60%2012%2012)'%20d='M12%202V22M9.4%204L12%206.6L14.6%204M9.4%2020L12%2017.4L14.6%2020'/%3E%3Cpath%20transform='rotate(120%2012%2012)'%20d='M12%202V22M9.4%204L12%206.6L14.6%204M9.4%2020L12%2017.4L14.6%2020'/%3E%3C/g%3E%3C/svg%3E") center / contain no-repeat;
+  animation: giro var(--giro, 16s) linear var(--giro-retraso, 0s) infinite var(--giro-sentido, normal);
+}
 
 @keyframes caer {
   from { transform: translate(0, -12vh); }
   to { transform: translate(var(--deriva, 20px), 112vh); }
+}
+@keyframes vaiven {
+  from { translate: calc(var(--ax, 12px) * -1) 0; }
+  to { translate: var(--ax, 12px) 0; }
+}
+@keyframes giro {
+  to { rotate: 360deg; }
 }
 
 .portada-titulo {
@@ -378,6 +464,7 @@ button { font: inherit; color: inherit; }
     box-shadow 0.25s ease,
     filter 0.25s ease;
   -webkit-tap-highlight-color: transparent;
+  box-shadow: 0 5px 16px rgba(0, 0, 0, 0.22);
 }
 
 .casilla.entra {
@@ -412,7 +499,12 @@ button { font: inherit; color: inherit; }
 .casilla.c-rojo { --fondo: var(--rojo); --num: var(--crema); }
 .casilla.c-crema { --fondo: var(--crema); --num: var(--rojo); }
 .casilla.c-rosado { --fondo: var(--rosado); --num: var(--granate-txt); }
-.casilla.c-granate { --fondo: var(--granate); --num: var(--crema); }
+.casilla.c-granate {
+  --fondo: var(--vino);
+  --num: var(--crema);
+  /* filo de luz: dibuja el contorno sin cambiar el color */
+  box-shadow: 0 5px 16px rgba(0, 0, 0, 0.22), inset 0 0 0 1px rgba(255, 190, 190, 0.18);
+}
 
 /* Día de hoy: halo */
 .casilla.hoy::after {

@@ -74,6 +74,13 @@
   // ------------------------------------------------------------
   document.querySelectorAll("[data-de]").forEach((el) => (el.textContent = CFG.de));
   document.querySelectorAll("[data-para]").forEach((el) => (el.textContent = CFG.para));
+  document.querySelectorAll("[data-titulo]").forEach((el) => {
+    // textContent + <br>: el texto de config.js nunca se interpreta como HTML
+    (CFG.tituloPortada || "").split("\n").forEach((linea, i) => {
+      if (i) el.appendChild(document.createElement("br"));
+      el.appendChild(document.createTextNode(linea));
+    });
+  });
   document.querySelectorAll("[data-dedicatoria]").forEach((el) => (el.textContent = CFG.dedicatoria));
   document.title = `Para ${CFG.para} · Calendario de Adviento`;
 
@@ -84,26 +91,71 @@
     $(".placa", deco).textContent = CFG.para;
   });
 
-  // Copos de nieve: cuanto más cerca está la capa, más grandes y rápidos
+  // ------------------------------------------------------------
+  //  Nieve. Cada grupo: n copos, tam [min,max] px, dur [min,max] s de caída,
+  //  op opacidad, ax [min,max] px de vaivén lateral y cristal:true para copos
+  //  con forma de cristal que giran. Más cerca de la cámara = más grande y rápido.
+  // ------------------------------------------------------------
   const capas = [...document.querySelectorAll(".capa")];
-  const CAPAS_COPOS = {
-    "capa-lejos": { n: 40, tam: [1.5, 3], dur: [22, 34] },
-    "capa-media": { n: 24, tam: [3, 5], dur: [14, 22] },
-    "capa-cerca": { n: 10, tam: [7, 12], dur: [8, 13] },
-  };
   const azar = (a, b) => a + Math.random() * (b - a);
+
+  function sembrar(contenedor, grupos) {
+    const frag = document.createDocumentFragment();
+    grupos.forEach((g) => {
+      for (let i = 0; i < g.n; i++) {
+        const s = document.createElement("span");
+        const tam = azar(...g.tam);
+        const dur = azar(...g.dur);
+        const vdur = azar(3.5, 6.5); // cada copo se balancea a su ritmo
+        let giro = "";
+        if (g.cristal) {
+          const t = azar(10, 22); // vueltas lentas, cada cristal a su ritmo y sentido
+          giro = `--giro:${t.toFixed(1)}s;--giro-retraso:${(-azar(0, t)).toFixed(1)}s;` +
+            `--giro-sentido:${Math.random() < 0.5 ? "normal" : "reverse"};`;
+        }
+        s.className = g.cristal ? "copo cristal" : "copo";
+        s.style.cssText =
+          `left:${azar(0, 100)}%;top:0;width:${tam}px;height:${tam}px;opacity:${g.op};` +
+          `--ax:${azar(...g.ax).toFixed(1)}px;--deriva:${azar(-40, 40).toFixed(1)}px;${giro}` +
+          `animation-duration:${dur}s,${vdur}s;animation-delay:${-azar(0, dur)}s,${-azar(0, vdur)}s`;
+        frag.appendChild(s);
+      }
+    });
+    contenedor.appendChild(frag);
+  }
+
+  // Portada: tres capas de profundidad
+  const CAPAS_COPOS = {
+    "capa-lejos": [
+      { n: 34, tam: [2, 3.5], dur: [18, 28], op: 0.5, ax: [4, 10] },
+      { n: 5, tam: [9, 13], dur: [18, 28], op: 0.5, ax: [6, 14], cristal: true },
+    ],
+    "capa-media": [
+      { n: 20, tam: [4, 6], dur: [11, 17], op: 0.7, ax: [10, 22] },
+      { n: 5, tam: [14, 18], dur: [11, 17], op: 0.65, ax: [12, 26], cristal: true },
+    ],
+    "capa-cerca": [
+      { n: 4, tam: [9, 15], dur: [7, 11], op: 0.45, ax: [20, 40] },
+      { n: 3, tam: [16, 24], dur: [9, 14], op: 0.6, ax: [20, 40], cristal: true },
+    ],
+  };
   capas.forEach((capa) => {
-    const c = CAPAS_COPOS[[...capa.classList].find((k) => CAPAS_COPOS[k])];
-    for (let i = 0; i < c.n; i++) {
-      const s = document.createElement("span");
-      const tam = azar(...c.tam);
-      const dur = azar(...c.dur);
-      s.className = "copo";
-      s.style.cssText = `left:${azar(0, 100)}%;top:0;width:${tam}px;height:${tam}px;` +
-        `animation-duration:${dur}s;animation-delay:${-azar(0, dur)}s;--deriva:${azar(-40, 40)}px`;
-      capa.appendChild(s);
-    }
+    sembrar(capa, CAPAS_COPOS[[...capa.classList].find((k) => CAPAS_COPOS[k])]);
   });
+
+  // Nieve del calendario: se crea al entrar y se quita al volver a la puerta
+  // (así no gasta nada mientras se ve la portada). Va siempre por detrás de las casillas.
+  const nieve = $("#nieve");
+  function nevar() {
+    if (nieve.childElementCount) return;
+    sembrar(nieve, [
+      { n: 22, tam: [2, 3.5], dur: [20, 30], op: 0.55, ax: [4, 10] },
+      { n: 14, tam: [4, 7], dur: [12, 18], op: 0.85, ax: [10, 22] },
+      { n: 6, tam: [9, 13], dur: [20, 30], op: 0.6, ax: [6, 14], cristal: true },
+      { n: 6, tam: [14, 20], dur: [12, 18], op: 0.8, ax: [12, 26], cristal: true },
+      { n: 4, tam: [18, 26], dur: [11, 16], op: 0.7, ax: [20, 36], cristal: true },
+    ]);
+  }
 
   // ------------------------------------------------------------
   //  Portada en 3D: cámara que avanza por el eje Z
@@ -361,11 +413,13 @@
     // La música empieza al entrar (viene de un clic, así que el navegador la deja sonar)
     btnSonido.hidden = false;
     Sonido.musica.iniciar();
+    nevar();
   }
 
   function volverAPuerta() {
     Sonido.musica.parar();
     btnSonido.hidden = true;
+    nieve.replaceChildren();
     puerta.classList.remove("abierta");
     portada.classList.remove("viajando");
     calendario.hidden = true;

@@ -8,9 +8,13 @@ window.CONFIG = {
   de: "Adrián",
   anio: 2026,
 
+  // Titular de la portada (justo debajo de "Diciembre ha llegado"). El salto de línea
+  // (\n) decide dónde se parte; mejor dos líneas cortas.
+  tituloPortada: "Una sorpresa te\nespera dentro",
+
   dedicatoria:
     "Este año quería prepararte algo especial para hacerte un poquito más bonito diciembre. " +
-    "Una puerta cada mañana, con pequeñas sorpresas de nosotros. Te quiero.",
+    "Una puerta cada mañana, con pequeñas sorpresas. Te amo.",
 
   // Sonido de los golpes en la puerta (Universfield, Pixabay). Pon "" para usar el golpe sintetizado.
   golpeArchivo: "assets/puerta-golpe.mp3",
