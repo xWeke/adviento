@@ -17,7 +17,7 @@
   //    hay que quitarlo y crear uno nuevo.
   //  · Las versiones recientes de iOS ignoran el <meta> y tiñen las barras con el
   //    fondo del <html>, así que éste cambia a la vez (clase `en-calendario` en <html>).
-  function colorBarras(variable, enCalendario, { remuestrear = true } = {}) {
+  function colorBarras(variable, enCalendario) {
     const c = getComputedStyle(document.documentElement).getPropertyValue(variable).trim();
     document.documentElement.classList.toggle("en-calendario", enCalendario);
     if (!c) return;
@@ -26,39 +26,19 @@
     meta.name = "theme-color";
     meta.content = c;
     document.head.appendChild(meta);
-    reavivarBarras(remuestrear);
+    reavivarBarras();
   }
 
   // Safari 26 no siempre vuelve a mirar el color de las franjas al cambiar: se sustituyen
   // por nodos nuevos y se hace un scroll mínimo para que repita el muestreo.
-  function reavivarBarras(conScroll = true) {
+  function reavivarBarras() {
     document.querySelectorAll(".barra-safari").forEach((b) => b.replaceWith(b.cloneNode(false)));
-    if (!conScroll) return;
     requestAnimationFrame(() => {
       const y = window.scrollY;
       window.scrollTo(0, y + 1);
       requestAnimationFrame(() => window.scrollTo(0, y));
     });
   }
-
-  // Durante el paso por la puerta las franjas siguen a lo que se ve en pantalla (verde →
-  // dorado de la luz → granate), para que no quede un borde de otro color en ningún momento.
-  const barras = document.getElementsByClassName("barra-safari"); // colección viva (se clonan)
-  const ORO_BORDE = [236, 172, 82]; // color de la luz en el borde (ver .destello en styles.css)
-  const hexARgb = (h) => {
-    const m = h.trim().replace("#", "");
-    return [0, 2, 4].map((i) => parseInt(m.slice(i, i + 2), 16));
-  };
-  const rgb = (c) => `rgb(${c.map((v) => Math.round(v)).join(",")})`;
-  const mezclar = (a, b, t) => a.map((v, i) => v + (b[i] - v) * t);
-  const tokenRgb = (v) => hexARgb(getComputedStyle(document.documentElement).getPropertyValue(v));
-  const VERDE_PORTADA = tokenRgb("--fondo-portada");
-  let barrasTenidas = false;
-  function tenirBarras(color) {
-    for (const b of barras) b.style.backgroundColor = color || "";
-    barrasTenidas = !!color;
-  }
-
   const cabecera = $(".cal-cabecera");
   const modal = $("#modal");
   const toastEl = $("#toast");
@@ -227,10 +207,6 @@
 
   const escala = (zrel) => P / (P - zrel);
   const clamp01 = (v) => Math.min(1, Math.max(0, v));
-  const curvaSuave = (t) => t * t * (3 - 2 * t);
-  // Tramo del viaje (0–1) en el que la luz dorada pasa de nada a llenar la pantalla
-  const LUZ_DESDE = 0.68;
-  const LUZ_HASTA = 0.93;
   const suavizar = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
   // fundido entre dos zrel (fracciones de P)
   const fundido = (zrel, desde, hasta) => 1 - clamp01((zrel / P - desde) / (hasta - desde));
@@ -315,14 +291,12 @@
     // (máx. ~1,45x), así que los puntos siguen nítidos.
     bgDots.style.transform = `translate3d(${(-cam.x * sp).toFixed(2)}px, ${(-cam.y * sp).toFixed(2)}px, 0) scale(${rp.toFixed(4)})`;
 
-    // La luz del interior llena la pantalla al cruzar la puerta. Va por tiempo (no por la
-    // escala del hueco, que se dispara al final) y con curva suave en los dos extremos.
-    const luz = curvaSuave(clamp01((progresoDolly - LUZ_DESDE) / (LUZ_HASTA - LUZ_DESDE)));
+    // La luz del interior llena la pantalla al cruzar la puerta
+    const sPuerta = escala(-cam.z);
+    const luz = clamp01((sPuerta - 12) / 24);
     destello.style.opacity = luz.toFixed(3);
     // Fuera del DOM pintado mientras no se usa: Safari en iPhone lo leería como color de sus barras
     destello.style.display = luz > 0.001 ? "block" : "none";
-    if (luz > 0.001) tenirBarras(rgb(mezclar(VERDE_PORTADA, ORO_BORDE, curvaSuave(Math.min(1, luz * 2)))));
-    else if (barrasTenidas) tenirBarras("");
   }
 
   function bucle(t) {
@@ -435,86 +409,48 @@
 
   function mostrarCalendario({ conDestello = false } = {}) {
     pararPortada();
-    if (conDestello) {
-      // La luz tapa toda la pantalla mientras se monta el calendario debajo
-      destello.style.display = "block";
-      destello.style.opacity = "1";
-    }
     portada.hidden = true;
     calendario.hidden = false;
     document.body.classList.add("en-calendario");
+    colorBarras("--fondo-cal", true);
     window.scrollTo(0, 0);
-    if (conDestello) {
-      // Las barras de Safari no pasan a granate con la pantalla aún dorada (se veía como un
-      // parpadeo oscuro en los bordes): cambian a mitad del fundido, sin el scroll de 1 px,
-      // que se hace al terminar (fin() → reavivarBarras).
-      // Las franjas se quedan doradas (en línea) y se funden al granate con la luz
-      colorBarras("--fondo-cal", true, { remuestrear: false });
-      tenirBarras(rgb(ORO_BORDE));
-    } else {
-      colorBarras("--fondo-cal", true);
-    }
 
     // El fondo de puntos vuelve a su estado normal para el parallax del calendario
     bgDots.style.transform = "";
+    bgDots.animate([{ opacity: 0 }, { opacity: 1 }], { duration: reducido ? 1 : 1200, easing: "ease-out" });
 
-    // Lo pesado (casillas, nieve, música) se hace ahora, aún bajo la luz, para que el
-    // tirón de montarlo no coincida con el fundido.
-    pintarRejilla(conDestello ? 650 : 100);
+    destello.style.opacity = "0";
+    if (conDestello) {
+      // La luz se disuelve y el calendario emerge desde dentro
+      destello.style.display = "block";
+      destello
+        .animate([{ opacity: 1 }, { opacity: 0 }], { duration: reducido ? 1 : 1600, easing: "ease-out" })
+        .finished.then(() => { destello.style.display = "none"; reavivarBarras(); })
+        .catch(() => { destello.style.display = "none"; reavivarBarras(); });
+      calendario.animate(
+        [
+          { opacity: 0, transform: "scale(0.9)" },
+          { opacity: 1, transform: "none" },
+        ],
+        { duration: reducido ? 1 : 1800, easing: "cubic-bezier(0.16, 1, 0.3, 1)" }
+      );
+    }
+
+    cabecera.animate(
+      [
+        { opacity: 0, transform: "translateY(-30px) scale(1.04)" },
+        { opacity: 1, transform: "none" },
+      ],
+      { duration: reducido ? 1 : 1200, easing: "cubic-bezier(0.2, 0.8, 0.2, 1)" }
+    );
+
+    pintarRejilla(conDestello ? 450 : 100);
     animando = false;
 
     // La música empieza al entrar (viene de un clic, así que el navegador la deja sonar)
+    btnSonido.hidden = false;
     Sonido.musica.iniciar();
     nevar();
-
-    const animarEntrada = () => {
-      // El botón de música va por encima de la luz: aparece con el fundido, no antes
-      btnSonido.hidden = false;
-      btnSonido.animate([{ opacity: 0 }, { opacity: 1 }], { duration: reducido ? 1 : 1400, delay: conDestello ? 500 : 0, fill: "backwards" });
-      bgDots.animate([{ opacity: 0 }, { opacity: 1 }], { duration: reducido ? 1 : 1400, easing: "ease-out" });
-      cabecera.animate(
-        [
-          { opacity: 0, transform: "translateY(-30px) scale(1.04)" },
-          { opacity: 1, transform: "none" },
-        ],
-        { duration: reducido ? 1 : 1400, easing: "cubic-bezier(0.2, 0.8, 0.2, 1)" }
-      );
-      if (!conDestello) return;
-      // La luz se disuelve a ritmo constante (suave al empezar y al acabar) y el
-      // calendario emerge desde dentro, siguiendo el avance de la cámara.
-      // La opacidad en línea se queda en 1 hasta que acaba: Safari tarda un frame en aplicar
-      // una animación nueva y, si estuviera ya a 0, se vería un parpadeo negro. Al acabar,
-      // fill "forwards" la mantiene en 0 hasta que se oculta.
-      const fin = () => {
-        destello.style.display = "none";
-        destello.style.opacity = "0";
-        destello.getAnimations().forEach((a) => a.cancel());
-        for (const b of barras) b.getAnimations().forEach((a) => a.cancel());
-        tenirBarras(""); // vuelven al granate de html.en-calendario
-        reavivarBarras();
-      };
-      const fundidoLuz = { duration: reducido ? 1 : 1900, easing: "cubic-bezier(0.45, 0, 0.55, 1)", fill: "forwards" };
-      const granate = rgb(tokenRgb("--fondo-cal"));
-      for (const b of barras) b.animate([{ backgroundColor: rgb(ORO_BORDE) }, { backgroundColor: granate }], fundidoLuz);
-      destello
-        .animate([{ opacity: 1 }, { opacity: 0 }], fundidoLuz)
-        .finished.then(fin, fin);
-      calendario.animate(
-        [
-          { opacity: 0, transform: "scale(0.92)" },
-          { opacity: 1, transform: "none" },
-        ],
-        { duration: reducido ? 1 : 2100, easing: "cubic-bezier(0.22, 1, 0.36, 1)", fill: "backwards" }
-      );
-    };
-
-    if (conDestello) {
-      // Dos frames de margen: el navegador pinta el calendario ya montado y luego empieza el fundido
-      requestAnimationFrame(() => requestAnimationFrame(animarEntrada));
-    } else {
-      destello.style.opacity = "0";
-      animarEntrada();
-    }
   }
 
   function volverAPuerta() {
@@ -526,8 +462,6 @@
     calendario.hidden = true;
     portada.hidden = false;
     document.body.classList.remove("en-calendario");
-    for (const b of barras) b.getAnimations().forEach((a) => a.cancel());
-    tenirBarras("");
     colorBarras("--fondo-portada", false);
     btnSaltar.hidden = false;
     window.scrollTo(0, 0);

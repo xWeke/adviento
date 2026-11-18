@@ -412,9 +412,7 @@ body.en-calendario .aurora { opacity: 1; }
   opacity: 0;
   display: none; /* solo existe durante el paso por la puerta (lo gestiona app.js); display:none
                     para que Safari en iPhone no la tenga en cuenta al teñir sus barras */
-  /* Bordes dorados, no marrones: al llenar la pantalla los bordes oscuros se veían como un
-     parpadeo justo antes del calendario. El color del borde está también en ORO_BORDE (app.js). */
-  background: radial-gradient(circle at 50% 50%, #fff8e8 0%, #ffd98a 45%, #f3bd68 78%, #ecac52 100%);
+  background: radial-gradient(circle at 50% 50%, #fff8e8 0%, #ffd98a 40%, #e5973a 75%, #7a2f12 100%);
 }
 
 /* ============================================================
