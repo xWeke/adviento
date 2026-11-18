@@ -269,8 +269,7 @@ button { font: inherit; color: inherit; }
   white-space: nowrap;
 }
 
-/* Estados de la animación */
-.puerta.llamando .puerta-marco { animation: toc 0.62s ease-in-out 2; }
+/* La sacudida de los golpes la dispara el audio (ver sacudirPuerta en app.js) */
 
 /* Modo 3D: cada elemento se posiciona desde el centro (punto de fuga) y el JS
    le da su proyección con `translate` y su tamaño con --zoom (sin scale: nítido). */
@@ -284,13 +283,6 @@ button { font: inherit; color: inherit; }
 }
 .portada.viajando .puerta { filter: none; cursor: default; }
 .portada.viajando .portada-cta { animation: none; }
-@keyframes toc {
-  0%, 100% { transform: translateX(0) rotate(0); }
-  18% { transform: translateX(-3px) rotate(-0.6deg); }
-  34% { transform: translateX(3px) rotate(0.6deg); }
-  50% { transform: translateX(-2px) rotate(-0.3deg); }
-  66% { transform: translateX(1px); }
-}
 
 .puerta.abierta .hoja-izq { transform: rotateY(84deg); }
 .puerta.abierta .hoja-der { transform: rotateY(-84deg); }
@@ -491,6 +483,7 @@ button { font: inherit; color: inherit; }
   filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.2));
 }
 .casilla.gran-dia .etiqueta {
+  text-transform: uppercase;
   position: absolute;
   top: 14px;
   left: 14px;
@@ -668,3 +661,29 @@ button { font: inherit; color: inherit; }
 }
 .toast.visible { opacity: 1; transform: translate(-50%, 0); }
 
+/* ============================================================
+   Botón de música
+   ============================================================ */
+.btn-sonido {
+  position: fixed;
+  left: max(16px, env(safe-area-inset-left));
+  bottom: max(16px, env(safe-area-inset-bottom));
+  z-index: 5;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(244, 238, 235, 0.92);
+  color: var(--granate);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.2s ease;
+}
+.btn-sonido:hover { transform: scale(1.06); }
+.btn-sonido:focus-visible { outline: 3px solid var(--oro-1); outline-offset: 3px; }
+.btn-sonido .tachado { opacity: 0; }
+.btn-sonido.off { background: rgba(244, 238, 235, 0.55); }
+.btn-sonido.off .tachado { opacity: 1; }

@@ -12,6 +12,20 @@ window.CONFIG = {
     "Este año quería prepararte algo especial para hacerte un poquito más bonito diciembre. " +
     "Una puerta cada mañana, con pequeñas sorpresas de nosotros. Te quiero.",
 
+  // Sonido de los golpes en la puerta (Universfield, Pixabay). Pon "" para usar el golpe sintetizado.
+  golpeArchivo: "assets/puerta-golpe.mp3",
+  // Ajuste fino de sincronía (ms) entre el sonido y la sacudida de la puerta.
+  // Positivo = la sacudida llega más tarde; negativo = más pronto. Con 0 suele bastar.
+  golpeAjusteMs: 0,
+
+  // Música de fondo al entrar al calendario (mp3 propio en assets/). Si lo dejas vacío
+  // ("") o el archivo falla, suenan villancicos de dominio público en caja de música.
+  musicaArchivo: "assets/musica.mp3?v=9", // sube el ?v= si cambias el mp3 (caché)
+
+  // Días con casilla dorada y lazo (como el 24). El texto es la etiqueta que lleva encima.
+  // Si cambias o añades días aquí, hay que colocarlos en el mosaico (DISPOSICION en app.js).
+  especiales: { 19: "Tu cumpleaños", 24: "El gran día" },
+
   // Clave del modo prueba: abre la web con ?preview=CLAVE para ver todos los días.
   // Añade &hoy=2026-12-05 para simular una fecha concreta.
   clavePreview: "adrian-prueba",
@@ -44,7 +58,7 @@ window.CONFIG = {
     16: { tipo: "texto",   titulo: "Día 16", texto: "Contenido pendiente." },
     17: { tipo: "texto",   titulo: "Día 17", texto: "Contenido pendiente." },
     18: { tipo: "texto",   titulo: "Día 18", texto: "Contenido pendiente." },
-    19: { tipo: "texto",   titulo: "Día 19", texto: "Contenido pendiente." },
+    19: { tipo: "texto",   titulo: "¡Feliz cumpleaños, Andrea!", texto: "Aquí irá tu sorpresa de cumpleaños." },
     20: { tipo: "texto",   titulo: "Día 20", texto: "Contenido pendiente." },
     21: { tipo: "texto",   titulo: "Día 21", texto: "Contenido pendiente." },
     22: { tipo: "texto",   titulo: "Día 22", texto: "Contenido pendiente." },

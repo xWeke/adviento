@@ -106,33 +106,6 @@
   });
 
   // ------------------------------------------------------------
-  //  Sonido de "toc" sintetizado (sin archivos)
-  // ------------------------------------------------------------
-  // Se crea al cargar (suspendido): crearlo en el clic congela la página ~1 s en
-  // algunos equipos Windows justo cuando empieza la animación.
-  let audioCtx = null;
-  try {
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  } catch { /* sin audio */ }
-  function toc() {
-    try {
-      if (!audioCtx) return;
-      if (audioCtx.state === "suspended") audioCtx.resume();
-      const t = audioCtx.currentTime;
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      osc.type = "sine";
-      osc.frequency.setValueAtTime(180, t);
-      osc.frequency.exponentialRampToValueAtTime(55, t + 0.12);
-      gain.gain.setValueAtTime(0.7, t);
-      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
-      osc.connect(gain).connect(audioCtx.destination);
-      osc.start(t);
-      osc.stop(t + 0.2);
-    } catch { /* sin audio */ }
-  }
-
-  // ------------------------------------------------------------
   //  Portada en 3D: cámara que avanza por el eje Z
   //  ----------------------------------------------------------
   //  Cada elemento vive a una profundidad z (z>0 = más cerca de la cámara).
@@ -307,23 +280,34 @@
   // ------------------------------------------------------------
   if (store.get("adviento-visto")) btnSaltar.hidden = false;
 
+  // Impacto de un nudillo: la puerta cede de golpe y vuelve con un pequeño rebote
+  const marcoPuerta = $(".puerta-marco");
+  function sacudirPuerta(i) {
+    const f = [1, 0.8, 0.95, 0.75][i] ?? 0.8;
+    marcoPuerta.animate(
+      [
+        { transform: "translateX(0) rotate(0deg)" },
+        { transform: `translateX(${-3.6 * f}px) rotate(${-0.5 * f}deg)`, offset: 0.1 },
+        { transform: `translateX(${1.7 * f}px) rotate(${0.22 * f}deg)`, offset: 0.42 },
+        { transform: `translateX(${-0.6 * f}px) rotate(${-0.06 * f}deg)`, offset: 0.7 },
+        { transform: "translateX(0) rotate(0deg)" },
+      ],
+      { duration: 240, easing: "ease-out" }
+    );
+  }
+
   async function entrar() {
     if (animando) return;
     animando = true;
     btnSaltar.hidden = true;
 
-    // 1. Llamar a la puerta
-    puerta.classList.add("llamando");
-    toc();
-    setTimeout(toc, 170);
-    setTimeout(toc, 620);
-    setTimeout(toc, 790);
-    await esperar(1260);
-    puerta.classList.remove("llamando");
+    // 1. Llamar a la puerta: cada golpe del audio sacude la puerta en su instante exacto
+    await Sonido.llamar(sacudirPuerta);
 
     // 2. Se abren las hojas (2 s); el viaje empieza cuando van por la mitad
     puerta.classList.add("abierta");
     portada.classList.add("viajando");
+    Sonido.abrir();
     await esperar(1100);
 
     // 3. La cámara avanza hacia el hueco
@@ -369,10 +353,16 @@
 
     pintarRejilla(conDestello ? 450 : 100);
     animando = false;
+
+    // La música empieza al entrar (viene de un clic, así que el navegador la deja sonar)
+    btnSonido.hidden = false;
+    Sonido.musica.iniciar();
   }
 
   function volverAPuerta() {
-    puerta.classList.remove("abierta", "llamando");
+    Sonido.musica.parar();
+    btnSonido.hidden = true;
+    puerta.classList.remove("abierta");
     portada.classList.remove("viajando");
     calendario.hidden = true;
     portada.hidden = false;
@@ -384,6 +374,18 @@
     pintarEscena();
     arrancarPortada();
   }
+
+  // Botón de música (esquina inferior izquierda)
+  const btnSonido = $("#sonido");
+  const pintarBtnSonido = () => {
+    const on = Sonido.musica.activa();
+    btnSonido.classList.toggle("off", !on);
+    btnSonido.setAttribute("aria-pressed", String(on));
+    btnSonido.setAttribute("aria-label", on ? "Silenciar la música" : "Activar la música");
+  };
+  btnSonido.addEventListener("click", () => Sonido.musica.alternar());
+  document.addEventListener("sonido-cambio", pintarBtnSonido);
+  pintarBtnSonido();
 
   puerta.addEventListener("click", entrar);
   btnSaltar.addEventListener("click", () => {
@@ -401,10 +403,13 @@
     [7, "c-rosado"], [15, "c-granate"], [1, "c-rojo w2"], [22, "c-crema"], [10, "c-rojo"],
     [24, "gran-dia w2 h2"], [4, "c-crema"], [13, "c-rosado h2"], [9, "c-rojo w2"],
     [20, "c-granate"], [18, "c-rosado"], [2, "c-crema"],
-    [11, "c-granate"], [5, "c-crema w2"], [17, "c-rojo h2"], [8, "c-rosado"], [23, "c-rojo"],
-    [3, "c-crema h2"], [14, "c-granate"], [19, "c-rosado w2"], [6, "c-crema"],
-    [12, "c-rojo w2"], [21, "c-granate"], [16, "c-rosado w2"],
+    [14, "c-granate h2"], [11, "c-rojo"], [3, "c-crema"], [17, "c-granate"], [5, "c-rojo w2"],
+    [19, "gran-dia w2 h2"], [12, "c-crema"], [16, "c-rosado w2"],
+    [8, "c-crema"], [6, "c-rojo"], [23, "c-granate"], [21, "c-crema"],
   ];
+
+  // Días con casilla dorada y lazo. El texto sale de config.js → especiales.
+  const ESPECIALES = CFG.especiales || { 24: "El gran día" };
 
   const LAZO_SVG = `
     <svg class="lazo" viewBox="0 0 120 72" aria-hidden="true">
@@ -428,11 +433,13 @@
       if (abiertos.has(n)) b.classList.add("abierta");
       if (esHoy(n)) b.classList.add("hoy");
 
-      if (n === 24) {
+      if (ESPECIALES[n]) {
         b.innerHTML = `
           <span class="cinta-v"></span><span class="cinta-h"></span>
           ${LAZO_SVG}
-          <span class="etiqueta">EL GRAN DÍA</span>`;
+          <span class="etiqueta"></span>`;
+        $(".etiqueta", b).textContent = ESPECIALES[n];
+        b.setAttribute("aria-label", `Día ${n}: ${ESPECIALES[n]}`);
       }
       b.insertAdjacentHTML("beforeend", `<span class="numero">${n}</span><span class="marca" aria-hidden="true">✓</span>`);
 
@@ -559,7 +566,7 @@
   function abrirModal(n, el) {
     const dia = CFG.dias[n] || { tipo: "texto", titulo: `Día ${n}`, texto: "" };
     casillaOrigen = el;
-    $(".modal-dia", modal).textContent = n === 24 ? "24 de diciembre · El gran día" : `${n} de diciembre`;
+    $(".modal-dia", modal).textContent = ESPECIALES[n] ? `${n} de diciembre · ${ESPECIALES[n]}` : `${n} de diciembre`;
     $(".modal-titulo", modal).textContent = dia.tipo === "vale" ? "Tienes un vale" : dia.titulo || `Día ${n}`;
     const cuerpo = $(".modal-cuerpo", modal);
     cuerpo.replaceChildren(construirContenido(dia));
