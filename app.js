@@ -17,7 +17,7 @@
   //    hay que quitarlo y crear uno nuevo.
   //  · Las versiones recientes de iOS ignoran el <meta> y tiñen las barras con el
   //    fondo del <html>, así que éste cambia a la vez (clase `en-calendario` en <html>).
-  function colorBarras(variable, enCalendario) {
+  function colorBarras(variable, enCalendario, { remuestrear = true } = {}) {
     const c = getComputedStyle(document.documentElement).getPropertyValue(variable).trim();
     document.documentElement.classList.toggle("en-calendario", enCalendario);
     if (!c) return;
@@ -26,13 +26,14 @@
     meta.name = "theme-color";
     meta.content = c;
     document.head.appendChild(meta);
-    reavivarBarras();
+    reavivarBarras(remuestrear);
   }
 
   // Safari 26 no siempre vuelve a mirar el color de las franjas al cambiar: se sustituyen
   // por nodos nuevos y se hace un scroll mínimo para que repita el muestreo.
-  function reavivarBarras() {
+  function reavivarBarras(conScroll = true) {
     document.querySelectorAll(".barra-safari").forEach((b) => b.replaceWith(b.cloneNode(false)));
+    if (!conScroll) return;
     requestAnimationFrame(() => {
       const y = window.scrollY;
       window.scrollTo(0, y + 1);
@@ -421,8 +422,17 @@
     portada.hidden = true;
     calendario.hidden = false;
     document.body.classList.add("en-calendario");
-    colorBarras("--fondo-cal", true);
     window.scrollTo(0, 0);
+    if (conDestello) {
+      // Las barras de Safari no pasan a granate con la pantalla aún dorada (se veía como un
+      // parpadeo oscuro en los bordes): cambian a mitad del fundido, sin el scroll de 1 px,
+      // que se hace al terminar (fin() → reavivarBarras).
+      setTimeout(() => {
+        if (!calendario.hidden) colorBarras("--fondo-cal", true, { remuestrear: false });
+      }, reducido ? 0 : 1100);
+    } else {
+      colorBarras("--fondo-cal", true);
+    }
 
     // El fondo de puntos vuelve a su estado normal para el parallax del calendario
     bgDots.style.transform = "";
