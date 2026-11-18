@@ -26,6 +26,18 @@
     meta.name = "theme-color";
     meta.content = c;
     document.head.appendChild(meta);
+    reavivarBarras();
+  }
+
+  // Safari 26 no siempre vuelve a mirar el color de las franjas al cambiar: se sustituyen
+  // por nodos nuevos y se hace un scroll mínimo para que repita el muestreo.
+  function reavivarBarras() {
+    document.querySelectorAll(".barra-safari").forEach((b) => b.replaceWith(b.cloneNode(false)));
+    requestAnimationFrame(() => {
+      const y = window.scrollY;
+      window.scrollTo(0, y + 1);
+      requestAnimationFrame(() => window.scrollTo(0, y));
+    });
   }
   const cabecera = $(".cal-cabecera");
   const modal = $("#modal");
@@ -413,8 +425,8 @@
       destello.style.display = "block";
       destello
         .animate([{ opacity: 1 }, { opacity: 0 }], { duration: reducido ? 1 : 1600, easing: "ease-out" })
-        .finished.then(() => { destello.style.display = "none"; })
-        .catch(() => { destello.style.display = "none"; });
+        .finished.then(() => { destello.style.display = "none"; reavivarBarras(); })
+        .catch(() => { destello.style.display = "none"; reavivarBarras(); });
       calendario.animate(
         [
           { opacity: 0, transform: "scale(0.9)" },

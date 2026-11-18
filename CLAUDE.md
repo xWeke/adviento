@@ -123,6 +123,10 @@ Hay un botón «Saltar intro» si ya se vio antes (`localStorage: adviento-visto
    `body`). Por eso:
    - `.barra-safari` (`.barra-arriba` / `.barra-abajo` en index.html): franjas fijas de 8 px con el color de la pantalla
      (`html.en-calendario` las cambia). No ocultarlas con opacity/visibility/z-index negativo o Safari las ignora.
+     En iOS (`@supports (-webkit-touch-callout: none)`) van con `z-index: 30`, por encima de `.aurora`/`.bg-dots`/`#nieve`,
+     que también son fijas, transparentes y tocan el borde (con z-index 0 el verde no cambiaba, v28).
+     `reavivarBarras()` las sustituye por nodos nuevos y hace un scroll de 1 px para forzar el remuestreo (al cambiar
+     de pantalla y al terminar el destello).
    - **Sin `transition` en el fondo de `html`/`body`**: con la transición de 1,2 s Safari leía el verde inicial y no lo actualizaba.
    - `.destello` (capa fija naranja) usa `display: none` cuando no se usa, no `visibility`/`opacity`.
    - El `theme-color` se sigue **recreando** (no basta cambiar `content`) para otros navegadores (Chrome Android, Safari antiguos).
