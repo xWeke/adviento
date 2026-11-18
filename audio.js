@@ -335,7 +335,7 @@ window.Sonido = (() => {
     });
   }
 
-  const estado = { sonando: false, timer: 0, t: 0, i: 0, cancion: 0, audio: null, fade: 0 };
+  const estado = { sonando: false, timer: 0, t: 0, i: 0, cancion: 0, audio: null, fade: 0, primed: false };
   let silenciada = store.get(CLAVE_MUTE) === "1";
   const avisar = () => document.dispatchEvent(new CustomEvent("sonido-cambio", { detail: { activa: !silenciada } }));
 
@@ -354,6 +354,61 @@ window.Sonido = (() => {
         estado.t += 1.6; // pausa entre villancicos
       }
     }
+  }
+
+  // El reproductor de la música se crea una sola vez y se reutiliza: los navegadores
+  // de móvil "desbloquean" un reproductor concreto cuando se le da play() dentro de un
+  // toque, y a partir de ahí dejan arrancarlo solo (p. ej. al acabar la animación).
+  function elementoMusica() {
+    if (estado.audio) return estado.audio;
+    if (!CFG.musicaArchivo) return null;
+    const el = new Audio(CFG.musicaArchivo);
+    el.loop = true;
+    el.preload = "auto";
+    // Si el archivo no existe o no se puede reproducir, suena la caja de música
+    el.addEventListener("error", () => {
+      estado.audio = null;
+      if (estado.sonando) arrancarSintetica();
+    }, { once: true });
+    estado.audio = el;
+    return el;
+  }
+
+  // Llamar SIEMPRE desde dentro de un toque/clic (ver entrar() en app.js)
+  function desbloquear() {
+    // Web Audio (crujido y música sintetizada): reanudar y emitir un instante de silencio
+    try {
+      if (ctx) {
+        if (ctx.state === "suspended") ctx.resume().catch(() => {});
+        const src = ctx.createBufferSource();
+        src.buffer = ctx.createBuffer(1, 1, 22050);
+        src.connect(ctx.destination);
+        src.start(0);
+      }
+    } catch { /* sin audio */ }
+
+    // mp3 de música: play() mudo + pausa. No se oye nada, pero queda desbloqueado.
+    const el = silenciada ? null : elementoMusica();
+    if (el && !estado.sonando && !estado.primed) {
+      estado.primed = true;
+      el.muted = true;
+      el.play()
+        .then(() => {
+          if (!estado.sonando) { el.pause(); el.currentTime = 0; }
+          el.muted = false;
+        })
+        .catch(() => { el.muted = false; });
+    }
+  }
+
+  // Si el navegador bloquea el arranque, se reintenta en el siguiente toque
+  function reintentarEnGesto(el) {
+    const eventos = ["pointerdown", "touchend", "keydown"];
+    const intentar = () => {
+      eventos.forEach((e) => document.removeEventListener(e, intentar, true));
+      if (estado.sonando && el.paused) el.play().catch(() => {});
+    };
+    eventos.forEach((e) => document.addEventListener(e, intentar, true));
   }
 
   function fundirArchivo(el, hasta, ms, alFinal) {
@@ -375,15 +430,14 @@ window.Sonido = (() => {
     estado.sonando = true;
 
     // ¿mp3 propio? (config.js → musicaArchivo)
-    if (CFG.musicaArchivo) {
-      const el = estado.audio || new Audio(CFG.musicaArchivo);
-      el.loop = true;
-      el.volume = 0;
-      estado.audio = el;
-      // Si el archivo no existe o no se puede reproducir, suena la caja de música
-      el.addEventListener("error", () => { estado.audio = null; if (estado.sonando) arrancarSintetica(); }, { once: true });
-      el.play().catch(() => {});
-      fundirArchivo(el, 0.6, 1000);
+    const el = elementoMusica();
+    if (el) {
+      clearInterval(estado.fade);
+      // El volumen y el fundido de entrada van grabados en el propio mp3 (Safari en
+      // iPhone ignora el volumen del reproductor), así que aquí siempre al máximo.
+      el.volume = 1;
+      el.muted = false;
+      el.play().catch(() => reintentarEnGesto(el));
       return;
     }
     arrancarSintetica();
@@ -431,6 +485,7 @@ window.Sonido = (() => {
   });
 
   return {
+    desbloquear,
     llamar,
     abrir,
     musica: {

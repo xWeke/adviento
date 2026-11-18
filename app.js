@@ -301,6 +301,10 @@
     animando = true;
     btnSaltar.hidden = true;
 
+    // Los móviles solo dejan arrancar audio dentro de un toque: se desbloquea ahora
+    // para que la música pueda empezar sola cuando termine la animación.
+    Sonido.desbloquear();
+
     // 1. Llamar a la puerta: cada golpe del audio sacude la puerta en su instante exacto
     await Sonido.llamar(sacudirPuerta);
 

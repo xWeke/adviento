@@ -20,7 +20,7 @@ window.CONFIG = {
 
   // Música de fondo al entrar al calendario (mp3 propio en assets/). Si lo dejas vacío
   // ("") o el archivo falla, suenan villancicos de dominio público en caja de música.
-  musicaArchivo: "assets/musica.mp3?v=9", // sube el ?v= si cambias el mp3 (caché)
+  musicaArchivo: "assets/musica.mp3?v=10", // sube el ?v= si cambias el mp3 (caché). Pon el volumen en el propio archivo.
 
   // Días con casilla dorada y lazo (como el 24). El texto es la etiqueta que lleva encima.
   // Si cambias o añades días aquí, hay que colocarlos en el mosaico (DISPOSICION en app.js).
