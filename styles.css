@@ -573,7 +573,7 @@ body.en-calendario .aurora { opacity: 1; }
 }
 .casilla.abierta .marca { opacity: 1; transform: none; }
 
-/* ---------- El gran día (24) ---------- */
+/* ---------- Cumpleaños (19): la única casilla dorada, con lazo ---------- */
 .casilla.gran-dia {
   --num: #fbf7ef;
   background:
@@ -606,7 +606,8 @@ body.en-calendario .aurora { opacity: 1; }
   transform: translate(-50%, -62%);
   filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.2));
 }
-.casilla.gran-dia .etiqueta {
+.casilla.gran-dia .etiqueta,
+.casilla.nochebuena .etiqueta {
   text-transform: uppercase;
   position: absolute;
   top: 14px;
@@ -624,6 +625,33 @@ body.en-calendario .aurora { opacity: 1; }
   z-index: 2;
   font-size: clamp(60px, calc(var(--celda) * 0.85), 150px);
   text-shadow: 0 3px 0 rgba(120, 80, 10, 0.35);
+}
+
+/* ---------- Nochebuena (24): granate oscuro aterciopelado, borde dorado y gorro de Papá Noel ---------- */
+.casilla.nochebuena {
+  --num: #fbf7ef;
+  background:
+    radial-gradient(ellipse 80% 70% at 30% 20%, rgba(255, 120, 120, 0.16), transparent 70%),
+    linear-gradient(150deg, #5c1421 0%, #3f0c16 55%, #2a070e 100%);
+  box-shadow:
+    0 5px 16px rgba(0, 0, 0, 0.3),
+    inset 0 0 0 1.5px rgba(246, 215, 124, 0.55);
+}
+.casilla.nochebuena .etiqueta { background: var(--oro-1); color: #3a1208; }
+.casilla.nochebuena .numero {
+  z-index: 2;
+  font-size: clamp(60px, calc(var(--celda) * 0.85), 150px);
+  text-shadow: 0 3px 0 rgba(0, 0, 0, 0.35);
+}
+.casilla.nochebuena .gorro {
+  position: absolute;
+  left: -0.06em;
+  top: -0.44em;
+  width: 0.92em;
+  transform: rotate(-14deg);
+  transform-origin: 30% 80%;
+  filter: drop-shadow(0 3px 3px rgba(0, 0, 0, 0.3));
+  pointer-events: none;
 }
 
 /* Bloqueada: al pulsar tiembla (después del 24 para que gane la cascada) */

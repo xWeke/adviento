@@ -80,8 +80,10 @@ Hay un botón «Saltar intro» si ya se vio antes (`localStorage: adviento-visto
   12×3 en móvil) o quedan huecos. Hay dos casillas 2×2 (24 y 19). Para cambiar el mosaico hay que
   simular el empaquetado en ambas columnas (se hizo con un script de Python de búsqueda) y comprobar
   `gridTemplateRows × columnas == suma de áreas`.
-- **Días especiales**: `especiales` en config.js (`19: "Tu cumpleaños"`, `24: "El gran día"`) → casilla
-  dorada con lazo y etiqueta. Añadir otro día especial exige hacerle hueco 2×2 en `DISPOSICION`.
+- **Días especiales**: `especiales` en config.js da la etiqueta (`19: "Tu cumpleaños"`, `24: "Nochebuena"`); el aspecto
+  lo da la clase en `DISPOSICION`: `gran-dia` = la **única** casilla dorada con lazo (el cumpleaños, 19), `nochebuena` =
+  granate oscuro con borde dorado y gorro de Papá Noel (`GORRO_SVG`, dentro de `.numero`), sin lazo (24). Decisión del
+  usuario: el cumpleaños pesa más que el 24. Añadir otro día especial exige hacerle hueco 2×2 en `DISPOSICION`.
 - **Bloqueo por fecha**: el día N se abre si hoy ≥ N de diciembre de `anio`. Casilla futura → tiembla + toast.
   Los días abiertos se guardan en `localStorage` (`adviento-abiertos-2026`).
 - **Modo prueba** (solo para Adrián): `?preview=adrian-prueba` abre todo sin guardar estado;

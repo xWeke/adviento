@@ -497,15 +497,16 @@
   // En 6 columnas rellena exactamente 6 filas.
   const DISPOSICION = [
     [7, "c-rosado"], [15, "c-granate"], [1, "c-rojo w2"], [22, "c-crema"], [10, "c-rojo"],
-    [24, "gran-dia w2 h2"], [4, "c-crema"], [13, "c-rosado h2"], [9, "c-rojo w2"],
+    [24, "nochebuena w2 h2"], [4, "c-crema"], [13, "c-rosado h2"], [9, "c-rojo w2"],
     [20, "c-granate"], [18, "c-rosado"], [2, "c-crema"],
     [14, "c-granate h2"], [11, "c-rojo"], [3, "c-crema"], [17, "c-granate"], [5, "c-rojo w2"],
     [19, "gran-dia w2 h2"], [12, "c-crema"], [16, "c-rosado w2"],
     [8, "c-crema"], [6, "c-rojo"], [23, "c-granate"], [21, "c-crema"],
   ];
 
-  // Días con casilla dorada y lazo. El texto sale de config.js → especiales.
-  const ESPECIALES = CFG.especiales || { 24: "El gran día" };
+  // Días especiales: llevan etiqueta (texto de config.js → especiales). El aspecto lo da
+  // la clase en DISPOSICION: "gran-dia" = dorada con lazo (19), "nochebuena" = granate con gorro (24).
+  const ESPECIALES = CFG.especiales || {};
 
   const LAZO_SVG = `
     <svg class="lazo" viewBox="0 0 120 72" aria-hidden="true">
@@ -516,6 +517,20 @@
         <path d="M60 38 C78 8, 114 6, 110 30 C107 50, 76 46, 60 38Z"/>
         <ellipse cx="60" cy="39" rx="9" ry="8.5"/>
       </g>
+    </svg>`;
+
+  // Gorro de Papá Noel que se coloca encima del número de la casilla "nochebuena"
+  const GORRO_SVG = `
+    <svg class="gorro" viewBox="0 0 100 80" aria-hidden="true">
+      <defs>
+        <linearGradient id="gorro-rojo" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#f0473b"/><stop offset="1" stop-color="#a8161c"/>
+        </linearGradient>
+      </defs>
+      <path d="M14 60 C18 34, 38 10, 64 10 C79 10, 89 21, 91 35 L83 39 C80 30, 73 26, 67 29 C73 40, 78 50, 82 58 Z" fill="url(#gorro-rojo)"/>
+      <path d="M30 40 C40 24, 52 17, 63 16" fill="none" stroke="rgba(255,255,255,.25)" stroke-width="3" stroke-linecap="round"/>
+      <rect x="7" y="53" width="83" height="18" rx="9" fill="#fbf7ef" transform="rotate(-3 48 62)"/>
+      <circle cx="90" cy="39" r="9" fill="#fbf7ef"/>
     </svg>`;
 
   function pintarRejilla(retrasoBase) {
@@ -529,15 +544,16 @@
       if (abiertos.has(n)) b.classList.add("abierta");
       if (esHoy(n)) b.classList.add("hoy");
 
+      if (b.classList.contains("gran-dia")) {
+        b.insertAdjacentHTML("beforeend", `<span class="cinta-v"></span><span class="cinta-h"></span>${LAZO_SVG}`);
+      }
       if (ESPECIALES[n]) {
-        b.innerHTML = `
-          <span class="cinta-v"></span><span class="cinta-h"></span>
-          ${LAZO_SVG}
-          <span class="etiqueta"></span>`;
+        b.insertAdjacentHTML("beforeend", `<span class="etiqueta"></span>`);
         $(".etiqueta", b).textContent = ESPECIALES[n];
         b.setAttribute("aria-label", `Día ${n}: ${ESPECIALES[n]}`);
       }
-      b.insertAdjacentHTML("beforeend", `<span class="numero">${n}</span><span class="marca" aria-hidden="true">✓</span>`);
+      const gorro = b.classList.contains("nochebuena") ? GORRO_SVG : "";
+      b.insertAdjacentHTML("beforeend", `<span class="numero">${gorro}${n}</span><span class="marca" aria-hidden="true">✓</span>`);
 
       b.style.setProperty("--retraso", `${retrasoBase / 1000 + i * 0.045}s`);
       b.classList.add("entra");

@@ -26,9 +26,9 @@ window.CONFIG = {
   // ("") o el archivo falla, suenan villancicos de dominio público en caja de música.
   musicaArchivo: "assets/musica.mp3?v=10", // sube el ?v= si cambias el mp3 (caché). Pon el volumen en el propio archivo.
 
-  // Días con casilla dorada y lazo (como el 24). El texto es la etiqueta que lleva encima.
-  // Si cambias o añades días aquí, hay que colocarlos en el mosaico (DISPOSICION en app.js).
-  especiales: { 19: "Tu cumpleaños", 24: "El gran día" },
+  // Días especiales: el texto es la etiqueta que llevan encima. El 19 es la casilla dorada
+  // con lazo y el 24 la granate con gorro de Papá Noel (su aspecto va en DISPOSICION, app.js).
+  especiales: { 19: "Tu cumpleaños", 24: "Nochebuena" },
 
   // Clave del modo prueba: abre la web con ?preview=CLAVE para ver todos los días.
   // Añade &hoy=2026-12-05 para simular una fecha concreta.
@@ -67,6 +67,6 @@ window.CONFIG = {
     21: { tipo: "texto",   titulo: "Día 21", texto: "Contenido pendiente." },
     22: { tipo: "texto",   titulo: "Día 22", texto: "Contenido pendiente." },
     23: { tipo: "texto",   titulo: "Día 23", texto: "Contenido pendiente." },
-    24: { tipo: "texto",   titulo: "El gran día", texto: "La sorpresa final." },
+    24: { tipo: "texto",   titulo: "Nochebuena", texto: "La sorpresa final." },
   },
 };
