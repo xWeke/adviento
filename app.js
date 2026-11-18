@@ -449,21 +449,28 @@
       if (!conDestello) return;
       // La luz se disuelve a ritmo constante (suave al empezar y al acabar) y el
       // calendario emerge desde dentro, siguiendo el avance de la cámara.
-      // (opacity 0 ya en línea: al acabar la animación no puede asomar un frame de luz)
-      destello.style.opacity = "0";
+      // La opacidad en línea se queda en 1 hasta que acaba: Safari tarda un frame en aplicar
+      // una animación nueva y, si estuviera ya a 0, se vería un parpadeo negro. Al acabar,
+      // fill "forwards" la mantiene en 0 hasta que se oculta.
+      const fin = () => {
+        destello.style.display = "none";
+        destello.style.opacity = "0";
+        destello.getAnimations().forEach((a) => a.cancel());
+        reavivarBarras();
+      };
       destello
         .animate([{ opacity: 1 }, { opacity: 0 }], {
           duration: reducido ? 1 : 1900,
           easing: "cubic-bezier(0.45, 0, 0.55, 1)",
+          fill: "forwards",
         })
-        .finished.then(() => { destello.style.display = "none"; reavivarBarras(); })
-        .catch(() => { destello.style.display = "none"; reavivarBarras(); });
+        .finished.then(fin, fin);
       calendario.animate(
         [
           { opacity: 0, transform: "scale(0.92)" },
           { opacity: 1, transform: "none" },
         ],
-        { duration: reducido ? 1 : 2100, easing: "cubic-bezier(0.22, 1, 0.36, 1)" }
+        { duration: reducido ? 1 : 2100, easing: "cubic-bezier(0.22, 1, 0.36, 1)", fill: "backwards" }
       );
     };
 
