@@ -34,11 +34,27 @@
 
 html, body { margin: 0; min-height: 100%; }
 
+/* Franjas para las barras de Safari en iPhone (iOS 26 ignora theme-color y tiñe sus barras con
+   un elemento fijo, opaco y de ancho completo pegado al borde de arriba/abajo). Quedan por debajo de
+   los puntos, las luces y la nieve, y son del mismo color que el fondo, así que no se ven.
+   No ocultarlas con opacity/visibility/z-index negativo: Safari dejaría de usarlas. */
+.barra-safari {
+  position: fixed;
+  left: 0;
+  right: 0;
+  height: 8px;
+  z-index: 0;
+  pointer-events: none;
+  background-color: var(--fondo-portada);
+}
+.barra-arriba { top: 0; }
+.barra-abajo { bottom: 0; }
+html.en-calendario .barra-safari { background-color: var(--fondo-cal); }
+
 /* El <html> lleva el mismo fondo que la pantalla activa: es lo que ve el navegador del móvil
    bajo sus barras (arriba y abajo). Cambia junto con body.en-calendario. */
 html {
   background: var(--fondo-portada);
-  transition: background-color 1.2s ease;
 }
 html.en-calendario { background: var(--fondo-cal); }
 
@@ -48,7 +64,8 @@ body {
   font-family: var(--sans);
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
-  transition: background-color 1.2s ease;
+  /* Sin transición a propósito: Safari en iPhone lee el color al cambiar y no vuelve a
+     leerlo, así que con una transición se quedaba con el verde. El cambio lo tapa el destello. */
 }
 
 body.en-calendario { background: var(--fondo-cal); }
@@ -388,7 +405,8 @@ body.en-calendario .aurora { opacity: 1; }
   z-index: 3;
   pointer-events: none;
   opacity: 0;
-  visibility: hidden; /* solo se muestra durante el paso por la puerta (lo gestiona app.js) */
+  display: none; /* solo existe durante el paso por la puerta (lo gestiona app.js); display:none
+                    para que Safari en iPhone no la tenga en cuenta al teñir sus barras */
   background: radial-gradient(circle at 50% 50%, #fff8e8 0%, #ffd98a 40%, #e5973a 75%, #7a2f12 100%);
 }
 

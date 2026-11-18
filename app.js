@@ -283,8 +283,8 @@
     const sPuerta = escala(-cam.z);
     const luz = clamp01((sPuerta - 12) / 24);
     destello.style.opacity = luz.toFixed(3);
-    // Oculto del todo mientras no se usa: Safari en iPhone lo leería como color de fondo
-    destello.style.visibility = luz > 0.001 ? "visible" : "hidden";
+    // Fuera del DOM pintado mientras no se usa: Safari en iPhone lo leería como color de sus barras
+    destello.style.display = luz > 0.001 ? "block" : "none";
   }
 
   function bucle(t) {
@@ -410,11 +410,11 @@
     destello.style.opacity = "0";
     if (conDestello) {
       // La luz se disuelve y el calendario emerge desde dentro
-      destello.style.visibility = "visible";
+      destello.style.display = "block";
       destello
         .animate([{ opacity: 1 }, { opacity: 0 }], { duration: reducido ? 1 : 1600, easing: "ease-out" })
-        .finished.then(() => { destello.style.visibility = "hidden"; })
-        .catch(() => { destello.style.visibility = "hidden"; });
+        .finished.then(() => { destello.style.display = "none"; })
+        .catch(() => { destello.style.display = "none"; });
       calendario.animate(
         [
           { opacity: 0, transform: "scale(0.9)" },

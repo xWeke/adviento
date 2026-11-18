@@ -118,10 +118,16 @@ Hay un botón «Saltar intro» si ya se vio antes (`localStorage: adviento-visto
    barras invertidas usar la herramienta Edit, y comprobar con `node --check` + abrir la página.
 6. Los textos de `config.js` se insertan con `textContent` / nodos de texto, nunca como HTML.
 7. **Barras del navegador del móvil** (`colorBarras()` en app.js): deben seguir al fondo de cada pantalla (portada verde,
-   calendario granate). Se actualizan tres cosas a la vez: el `<meta name="theme-color">` (se **recrea**, porque Safari iOS no
-   reacciona a cambiar su `content`), el fondo del `<html>` (clase `en-calendario` en `<html>`, que es lo que tiñe las barras en
-   iOS recientes) y la visibilidad de `.destello` (capa fija naranja: oculta salvo durante el paso por la puerta, para que
-   Safari no la lea como color). Esto **no se puede probar en Chrome de escritorio**; lo confirma el usuario en su iPhone.
+   calendario granate). El iPhone del usuario tiene **iOS 26.6.1**, cuyo Safari **ignora `theme-color`** y tiñe sus barras con
+   un elemento `position: fixed`, de fondo opaco, ancho completo y ≥ 6 px de alto pegado al borde (si no hay, usa el fondo del
+   `body`). Por eso:
+   - `.barra-safari` (`.barra-arriba` / `.barra-abajo` en index.html): franjas fijas de 8 px con el color de la pantalla
+     (`html.en-calendario` las cambia). No ocultarlas con opacity/visibility/z-index negativo o Safari las ignora.
+   - **Sin `transition` en el fondo de `html`/`body`**: con la transición de 1,2 s Safari leía el verde inicial y no lo actualizaba.
+   - `.destello` (capa fija naranja) usa `display: none` cuando no se usa, no `visibility`/`opacity`.
+   - El `theme-color` se sigue **recreando** (no basta cambiar `content`) para otros navegadores (Chrome Android, Safari antiguos).
+   Fuentes (no oficiales de Apple, se contradicen en detalles): 1ar.io «Safari 26 Liquid Glass», grooovinger.com
+   «Define the Theme Color for Safari 26». **No se puede probar en Chrome de escritorio**: lo confirma el usuario en su iPhone.
 
 ## Derechos y publicación
 
