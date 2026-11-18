@@ -388,16 +388,17 @@ window.Sonido = (() => {
     } catch { /* sin audio */ }
 
     // mp3 de música: play() mudo + pausa. No se oye nada, pero queda desbloqueado.
+    // Se queda en silencio (muted) hasta arrancar(): si la pausa llega tarde o el
+    // iPhone la ignora, la canción no se oye en la puerta.
     const el = silenciada ? null : elementoMusica();
     if (el && !estado.sonando && !estado.primed) {
       estado.primed = true;
       el.muted = true;
-      el.play()
-        .then(() => {
-          if (!estado.sonando) { el.pause(); el.currentTime = 0; }
-          el.muted = false;
-        })
-        .catch(() => { el.muted = false; });
+      const pausar = () => {
+        if (!estado.sonando) { el.pause(); el.currentTime = 0; }
+      };
+      el.addEventListener("playing", pausar, { once: true });
+      el.play().then(pausar).catch(() => {});
     }
   }
 
@@ -436,6 +437,7 @@ window.Sonido = (() => {
       // El volumen y el fundido de entrada van grabados en el propio mp3 (Safari en
       // iPhone ignora el volumen del reproductor), así que aquí siempre al máximo.
       el.volume = 1;
+      el.currentTime = 0; // siempre desde el principio (con su fundido), aunque el desbloqueo siga sonando mudo
       el.muted = false;
       el.play().catch(() => reintentarEnGesto(el));
       return;
