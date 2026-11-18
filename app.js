@@ -12,11 +12,20 @@
   const destello = $(".destello");
 
   // Color de las barras del navegador del móvil (arriba y abajo): sigue al fondo de
-  // cada pantalla, que sale de los tokens de styles.css. Si no, se quedan en el verde de la portada.
-  const metaColor = document.querySelector('meta[name="theme-color"]');
-  function colorBarras(variable) {
+  // cada pantalla, que sale de los tokens de styles.css.
+  //  · Safari en iPhone no reacciona a cambiar el `content` de un <meta> existente:
+  //    hay que quitarlo y crear uno nuevo.
+  //  · Las versiones recientes de iOS ignoran el <meta> y tiñen las barras con el
+  //    fondo del <html>, así que éste cambia a la vez (clase `en-calendario` en <html>).
+  function colorBarras(variable, enCalendario) {
     const c = getComputedStyle(document.documentElement).getPropertyValue(variable).trim();
-    if (c && metaColor) metaColor.setAttribute("content", c);
+    document.documentElement.classList.toggle("en-calendario", enCalendario);
+    if (!c) return;
+    document.head.querySelectorAll('meta[name="theme-color"]').forEach((m) => m.remove());
+    const meta = document.createElement("meta");
+    meta.name = "theme-color";
+    meta.content = c;
+    document.head.appendChild(meta);
   }
   const cabecera = $(".cal-cabecera");
   const modal = $("#modal");
@@ -272,7 +281,10 @@
 
     // La luz del interior llena la pantalla al cruzar la puerta
     const sPuerta = escala(-cam.z);
-    destello.style.opacity = clamp01((sPuerta - 12) / 24).toFixed(3);
+    const luz = clamp01((sPuerta - 12) / 24);
+    destello.style.opacity = luz.toFixed(3);
+    // Oculto del todo mientras no se usa: Safari en iPhone lo leería como color de fondo
+    destello.style.visibility = luz > 0.001 ? "visible" : "hidden";
   }
 
   function bucle(t) {
@@ -388,7 +400,7 @@
     portada.hidden = true;
     calendario.hidden = false;
     document.body.classList.add("en-calendario");
-    colorBarras("--fondo-cal");
+    colorBarras("--fondo-cal", true);
     window.scrollTo(0, 0);
 
     // El fondo de puntos vuelve a su estado normal para el parallax del calendario
@@ -398,7 +410,11 @@
     destello.style.opacity = "0";
     if (conDestello) {
       // La luz se disuelve y el calendario emerge desde dentro
-      destello.animate([{ opacity: 1 }, { opacity: 0 }], { duration: reducido ? 1 : 1600, easing: "ease-out" });
+      destello.style.visibility = "visible";
+      destello
+        .animate([{ opacity: 1 }, { opacity: 0 }], { duration: reducido ? 1 : 1600, easing: "ease-out" })
+        .finished.then(() => { destello.style.visibility = "hidden"; })
+        .catch(() => { destello.style.visibility = "hidden"; });
       calendario.animate(
         [
           { opacity: 0, transform: "scale(0.9)" },
@@ -434,7 +450,7 @@
     calendario.hidden = true;
     portada.hidden = false;
     document.body.classList.remove("en-calendario");
-    colorBarras("--fondo-portada");
+    colorBarras("--fondo-portada", false);
     btnSaltar.hidden = false;
     window.scrollTo(0, 0);
     reiniciarCamara();

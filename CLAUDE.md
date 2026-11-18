@@ -117,6 +117,11 @@ Hay un botón «Saltar intro» si ya se vio antes (`localStorage: adviento-visto
 5. **Al escribir `\n` o `\\` desde la línea de comandos se perdían las barras** (heredocs/Python): para cadenas con
    barras invertidas usar la herramienta Edit, y comprobar con `node --check` + abrir la página.
 6. Los textos de `config.js` se insertan con `textContent` / nodos de texto, nunca como HTML.
+7. **Barras del navegador del móvil** (`colorBarras()` en app.js): deben seguir al fondo de cada pantalla (portada verde,
+   calendario granate). Se actualizan tres cosas a la vez: el `<meta name="theme-color">` (se **recrea**, porque Safari iOS no
+   reacciona a cambiar su `content`), el fondo del `<html>` (clase `en-calendario` en `<html>`, que es lo que tiñe las barras en
+   iOS recientes) y la visibilidad de `.destello` (capa fija naranja: oculta salvo durante el paso por la puerta, para que
+   Safari no la lea como color). Esto **no se puede probar en Chrome de escritorio**; lo confirma el usuario en su iPhone.
 
 ## Derechos y publicación
 

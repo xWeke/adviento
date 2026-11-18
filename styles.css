@@ -34,6 +34,14 @@
 
 html, body { margin: 0; min-height: 100%; }
 
+/* El <html> lleva el mismo fondo que la pantalla activa: es lo que ve el navegador del móvil
+   bajo sus barras (arriba y abajo). Cambia junto con body.en-calendario. */
+html {
+  background: var(--fondo-portada);
+  transition: background-color 1.2s ease;
+}
+html.en-calendario { background: var(--fondo-cal); }
+
 body {
   background: var(--fondo-portada);
   color: var(--texto);
@@ -380,6 +388,7 @@ body.en-calendario .aurora { opacity: 1; }
   z-index: 3;
   pointer-events: none;
   opacity: 0;
+  visibility: hidden; /* solo se muestra durante el paso por la puerta (lo gestiona app.js) */
   background: radial-gradient(circle at 50% 50%, #fff8e8 0%, #ffd98a 40%, #e5973a 75%, #7a2f12 100%);
 }
 
