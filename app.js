@@ -40,6 +40,25 @@
       requestAnimationFrame(() => window.scrollTo(0, y));
     });
   }
+
+  // Durante el paso por la puerta las franjas siguen a lo que se ve en pantalla (verde →
+  // dorado de la luz → granate), para que no quede un borde de otro color en ningún momento.
+  const barras = document.getElementsByClassName("barra-safari"); // colección viva (se clonan)
+  const ORO_BORDE = [236, 172, 82]; // color de la luz en el borde (ver .destello en styles.css)
+  const hexARgb = (h) => {
+    const m = h.trim().replace("#", "");
+    return [0, 2, 4].map((i) => parseInt(m.slice(i, i + 2), 16));
+  };
+  const rgb = (c) => `rgb(${c.map((v) => Math.round(v)).join(",")})`;
+  const mezclar = (a, b, t) => a.map((v, i) => v + (b[i] - v) * t);
+  const tokenRgb = (v) => hexARgb(getComputedStyle(document.documentElement).getPropertyValue(v));
+  const VERDE_PORTADA = tokenRgb("--fondo-portada");
+  let barrasTenidas = false;
+  function tenirBarras(color) {
+    for (const b of barras) b.style.backgroundColor = color || "";
+    barrasTenidas = !!color;
+  }
+
   const cabecera = $(".cal-cabecera");
   const modal = $("#modal");
   const toastEl = $("#toast");
@@ -302,6 +321,8 @@
     destello.style.opacity = luz.toFixed(3);
     // Fuera del DOM pintado mientras no se usa: Safari en iPhone lo leería como color de sus barras
     destello.style.display = luz > 0.001 ? "block" : "none";
+    if (luz > 0.001) tenirBarras(rgb(mezclar(VERDE_PORTADA, ORO_BORDE, curvaSuave(Math.min(1, luz * 2)))));
+    else if (barrasTenidas) tenirBarras("");
   }
 
   function bucle(t) {
@@ -427,9 +448,9 @@
       // Las barras de Safari no pasan a granate con la pantalla aún dorada (se veía como un
       // parpadeo oscuro en los bordes): cambian a mitad del fundido, sin el scroll de 1 px,
       // que se hace al terminar (fin() → reavivarBarras).
-      setTimeout(() => {
-        if (!calendario.hidden) colorBarras("--fondo-cal", true, { remuestrear: false });
-      }, reducido ? 0 : 1100);
+      // Las franjas se quedan doradas (en línea) y se funden al granate con la luz
+      colorBarras("--fondo-cal", true, { remuestrear: false });
+      tenirBarras(rgb(ORO_BORDE));
     } else {
       colorBarras("--fondo-cal", true);
     }
@@ -443,11 +464,13 @@
     animando = false;
 
     // La música empieza al entrar (viene de un clic, así que el navegador la deja sonar)
-    btnSonido.hidden = false;
     Sonido.musica.iniciar();
     nevar();
 
     const animarEntrada = () => {
+      // El botón de música va por encima de la luz: aparece con el fundido, no antes
+      btnSonido.hidden = false;
+      btnSonido.animate([{ opacity: 0 }, { opacity: 1 }], { duration: reducido ? 1 : 1400, delay: conDestello ? 500 : 0, fill: "backwards" });
       bgDots.animate([{ opacity: 0 }, { opacity: 1 }], { duration: reducido ? 1 : 1400, easing: "ease-out" });
       cabecera.animate(
         [
@@ -466,14 +489,15 @@
         destello.style.display = "none";
         destello.style.opacity = "0";
         destello.getAnimations().forEach((a) => a.cancel());
+        for (const b of barras) b.getAnimations().forEach((a) => a.cancel());
+        tenirBarras(""); // vuelven al granate de html.en-calendario
         reavivarBarras();
       };
+      const fundidoLuz = { duration: reducido ? 1 : 1900, easing: "cubic-bezier(0.45, 0, 0.55, 1)", fill: "forwards" };
+      const granate = rgb(tokenRgb("--fondo-cal"));
+      for (const b of barras) b.animate([{ backgroundColor: rgb(ORO_BORDE) }, { backgroundColor: granate }], fundidoLuz);
       destello
-        .animate([{ opacity: 1 }, { opacity: 0 }], {
-          duration: reducido ? 1 : 1900,
-          easing: "cubic-bezier(0.45, 0, 0.55, 1)",
-          fill: "forwards",
-        })
+        .animate([{ opacity: 1 }, { opacity: 0 }], fundidoLuz)
         .finished.then(fin, fin);
       calendario.animate(
         [
@@ -502,6 +526,8 @@
     calendario.hidden = true;
     portada.hidden = false;
     document.body.classList.remove("en-calendario");
+    for (const b of barras) b.getAnimations().forEach((a) => a.cancel());
+    tenirBarras("");
     colorBarras("--fondo-portada", false);
     btnSaltar.hidden = false;
     window.scrollTo(0, 0);
