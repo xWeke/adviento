@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Calendario de Adviento</title>
+  <meta name="theme-color" content="#0f1512" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800;900&family=Playfair+Display:ital,wght@1,600;1,700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css?v=5" />
+</head>
+<body>
+  <div class="bg-dots" aria-hidden="true"></div>
+
+  <!-- ===================== PORTADA ===================== -->
+  <section id="portada" class="portada">
+    <div class="portada-luz" aria-hidden="true"></div>
+    <div class="capa capa-lejos" data-prof="0.3" aria-hidden="true"></div>
+    <div class="capa capa-media" data-prof="0.7" aria-hidden="true"></div>
+
+    <header class="portada-texto p3d">
+      <p class="kicker">Diciembre ha llegado</p>
+      <h1 class="portada-titulo"><span data-de></span> te<br />espera dentro</h1>
+    </header>
+
+    <button class="puerta p3d" id="puerta" type="button" aria-label="Llamar a la puerta para entrar">
+      <span class="puerta-marco">
+        <span class="puerta-hueco">
+          <span class="puerta-interior" aria-hidden="true"></span>
+          <span class="hoja hoja-izq"><span class="hoja-deco"></span></span>
+          <span class="hoja hoja-der"><span class="hoja-deco"></span></span>
+        </span>
+      </span>
+    </button>
+
+    <p class="portada-cta p3d">Llama para entrar</p>
+    <div class="capa capa-cerca" data-prof="1.4" aria-hidden="true"></div>
+    <button class="saltar" id="saltar" type="button" hidden>Saltar intro</button>
+  </section>
+
+  <div class="destello" aria-hidden="true"></div>
+
+  <!-- ===================== CALENDARIO ===================== -->
+  <main id="calendario" class="calendario" hidden>
+    <header class="cal-cabecera">
+      <p class="kicker">Para</p>
+      <h1 class="cal-nombre" data-para></h1>
+      <p class="cal-dedicatoria" data-dedicatoria></p>
+      <p class="cal-firma">Con cariño, <span data-de></span></p>
+    </header>
+
+    <div class="rejilla" id="rejilla"></div>
+
+    <footer class="cal-pie">
+      <button type="button" class="enlace" id="volver">Volver a la puerta</button>
+    </footer>
+  </main>
+
+  <!-- ===================== MODAL DEL DÍA ===================== -->
+  <dialog class="modal" id="modal">
+    <div class="modal-tarjeta">
+      <button class="modal-cerrar" type="button" aria-label="Cerrar">×</button>
+      <p class="modal-dia"></p>
+      <h2 class="modal-titulo"></h2>
+      <div class="modal-cuerpo"></div>
+    </div>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="config.js?v=5"></script>
+  <script src="app.js?v=5"></script>
+</body>
+</html>
