@@ -17,7 +17,7 @@
   //    hay que quitarlo y crear uno nuevo.
   //  · Las versiones recientes de iOS ignoran el <meta> y tiñen las barras con el
   //    fondo del <html>, así que éste cambia a la vez (clase `en-calendario` en <html>).
-  function colorBarras(variable, enCalendario) {
+  function colorBarras(variable, enCalendario, { remuestrear = true } = {}) {
     const c = getComputedStyle(document.documentElement).getPropertyValue(variable).trim();
     document.documentElement.classList.toggle("en-calendario", enCalendario);
     if (!c) return;
@@ -26,19 +26,36 @@
     meta.name = "theme-color";
     meta.content = c;
     document.head.appendChild(meta);
-    reavivarBarras();
+    reavivarBarras(remuestrear);
   }
 
   // Safari 26 no siempre vuelve a mirar el color de las franjas al cambiar: se sustituyen
   // por nodos nuevos y se hace un scroll mínimo para que repita el muestreo.
-  function reavivarBarras() {
+  function reavivarBarras(conScroll = true) {
     document.querySelectorAll(".barra-safari").forEach((b) => b.replaceWith(b.cloneNode(false)));
+    if (!conScroll) return;
     requestAnimationFrame(() => {
       const y = window.scrollY;
       window.scrollTo(0, y + 1);
       requestAnimationFrame(() => window.scrollTo(0, y));
     });
   }
+  // Mientras el velo granate cubre la pantalla, las franjas (barras de Safari) pasan del
+  // verde al granate a la vez que él, para que no quede un borde de otro color.
+  const barras = document.getElementsByClassName("barra-safari"); // colección viva (se clonan)
+  const tokenRgb = (v) => {
+    const h = getComputedStyle(document.documentElement).getPropertyValue(v).trim().replace("#", "");
+    return [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16));
+  };
+  const VERDE_RGB = tokenRgb("--fondo-portada");
+  const GRANATE_RGB = tokenRgb("--fondo-cal");
+  let barrasTenidas = false;
+  function tenirBarras(t) {
+    const c = t == null ? "" : `rgb(${VERDE_RGB.map((v, i) => Math.round(v + (GRANATE_RGB[i] - v) * t)).join(",")})`;
+    for (const b of barras) b.style.backgroundColor = c;
+    barrasTenidas = t != null;
+  }
+
   const cabecera = $(".cal-cabecera");
   const modal = $("#modal");
   const toastEl = $("#toast");
@@ -207,6 +224,12 @@
 
   const escala = (zrel) => P / (P - zrel);
   const clamp01 = (v) => Math.min(1, Math.max(0, v));
+  const curvaSuave = (t) => t * t * (3 - 2 * t);
+  // Tramo del viaje (0–1) en el que el velo granate cubre la pantalla al cruzar el hueco
+  // Debe estar completo antes de que la puerta se recorte al pasar la cámara (~0,84): si no,
+  // asoma el fondo verde. El viaje termina en VELO_HASTA (el resto quedaría tapado).
+  const VELO_DESDE = 0.6;
+  const VELO_HASTA = 0.82;
   const suavizar = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
   // fundido entre dos zrel (fracciones de P)
   const fundido = (zrel, desde, hasta) => 1 - clamp01((zrel / P - desde) / (hasta - desde));
@@ -291,12 +314,14 @@
     // (máx. ~1,45x), así que los puntos siguen nítidos.
     bgDots.style.transform = `translate3d(${(-cam.x * sp).toFixed(2)}px, ${(-cam.y * sp).toFixed(2)}px, 0) scale(${rp.toFixed(4)})`;
 
-    // La luz del interior llena la pantalla al cruzar la puerta
-    const sPuerta = escala(-cam.z);
-    const luz = clamp01((sPuerta - 12) / 24);
-    destello.style.opacity = luz.toFixed(3);
+    // Al cruzar el hueco, la luz del interior se va apagando hacia el granate del calendario
+    // (velo). Va por tiempo, con curva suave en los dos extremos, y mientras la cámara aún avanza.
+    const velo = curvaSuave(clamp01((progresoDolly - VELO_DESDE) / (VELO_HASTA - VELO_DESDE)));
+    destello.style.opacity = velo.toFixed(3);
     // Fuera del DOM pintado mientras no se usa: Safari en iPhone lo leería como color de sus barras
-    destello.style.display = luz > 0.001 ? "block" : "none";
+    destello.style.display = velo > 0.001 ? "block" : "none";
+    if (velo > 0.001) tenirBarras(velo);
+    else if (barrasTenidas) tenirBarras(null);
   }
 
   function bucle(t) {
@@ -319,7 +344,7 @@
 
     pintarEscena();
 
-    if (dolly && progresoDolly >= 1) {
+    if (dolly && progresoDolly >= VELO_HASTA) {
       const fin = dolly.resolver;
       dolly = null;
       fin();
@@ -389,6 +414,10 @@
     // para que la música pueda empezar sola cuando termine la animación.
     Sonido.desbloquear();
 
+    // El calendario se monta ya (sigue oculto): al final del viaje solo hay que mostrarlo
+    pintarRejilla(700);
+    rejillaLista = true;
+
     // 1. Llamar a la puerta: cada golpe del audio sacude la puerta en su instante exacto
     await Sonido.llamar(sacudirPuerta);
 
@@ -407,50 +436,85 @@
     mostrarCalendario({ conDestello: true });
   }
 
+  let rejillaLista = false;
+
   function mostrarCalendario({ conDestello = false } = {}) {
     pararPortada();
+    if (conDestello) {
+      // El velo granate cubre la pantalla mientras se cambia de pantalla por debajo
+      destello.style.display = "block";
+      destello.style.opacity = "1";
+      tenirBarras(null);
+    }
     portada.hidden = true;
     calendario.hidden = false;
     document.body.classList.add("en-calendario");
-    colorBarras("--fondo-cal", true);
+    // Con velo, el scroll de 1 px para Safari se deja para cuando se retira (fin)
+    colorBarras("--fondo-cal", true, { remuestrear: !conDestello });
     window.scrollTo(0, 0);
 
     // El fondo de puntos vuelve a su estado normal para el parallax del calendario
     bgDots.style.transform = "";
-    bgDots.animate([{ opacity: 0 }, { opacity: 1 }], { duration: reducido ? 1 : 1200, easing: "ease-out" });
 
-    destello.style.opacity = "0";
-    if (conDestello) {
-      // La luz se disuelve y el calendario emerge desde dentro
-      destello.style.display = "block";
-      destello
-        .animate([{ opacity: 1 }, { opacity: 0 }], { duration: reducido ? 1 : 1600, easing: "ease-out" })
-        .finished.then(() => { destello.style.display = "none"; reavivarBarras(); })
-        .catch(() => { destello.style.display = "none"; reavivarBarras(); });
-      calendario.animate(
-        [
-          { opacity: 0, transform: "scale(0.9)" },
-          { opacity: 1, transform: "none" },
-        ],
-        { duration: reducido ? 1 : 1800, easing: "cubic-bezier(0.16, 1, 0.3, 1)" }
-      );
-    }
-
-    cabecera.animate(
-      [
-        { opacity: 0, transform: "translateY(-30px) scale(1.04)" },
-        { opacity: 1, transform: "none" },
-      ],
-      { duration: reducido ? 1 : 1200, easing: "cubic-bezier(0.2, 0.8, 0.2, 1)" }
-    );
-
-    pintarRejilla(conDestello ? 450 : 100);
+    if (!rejillaLista) pintarRejilla(100);
+    rejillaLista = false;
     animando = false;
 
     // La música empieza al entrar (viene de un clic, así que el navegador la deja sonar)
-    btnSonido.hidden = false;
     Sonido.musica.iniciar();
     nevar();
+
+    const animarEntrada = () => {
+      bgDots.animate([{ opacity: 0 }, { opacity: 1 }], { duration: reducido ? 1 : 1400, easing: "ease-out" });
+      cabecera.animate(
+        [
+          { opacity: 0, transform: "translateY(-30px) scale(1.04)" },
+          { opacity: 1, transform: "none" },
+        ],
+        { duration: reducido ? 1 : 1400, easing: "cubic-bezier(0.2, 0.8, 0.2, 1)" }
+      );
+      // El botón de música aparece con el calendario, no de golpe
+      btnSonido.hidden = false;
+      btnSonido.animate([{ opacity: 0 }, { opacity: 1 }], {
+        duration: reducido ? 1 : 1200,
+        delay: conDestello && !reducido ? 600 : 0,
+        fill: "backwards",
+      });
+      if (!conDestello) return;
+
+      // El velo se retira despacio: es del mismo granate que el fondo, así que no hay cambio
+      // de color, solo aparecen el calendario, las luces y la nieve que hay debajo.
+      // La opacidad en línea sigue a 1 hasta el final (Safari tarda un frame en aplicar una
+      // animación nueva; si estuviera ya a 0 se vería un parpadeo).
+      const fin = () => {
+        destello.style.display = "none";
+        destello.style.opacity = "0";
+        destello.getAnimations().forEach((a) => a.cancel());
+        reavivarBarras();
+      };
+      destello
+        .animate([{ opacity: 1 }, { opacity: 0 }], {
+          duration: reducido ? 1 : 1700,
+          easing: "cubic-bezier(0.45, 0, 0.55, 1)",
+          fill: "forwards",
+        })
+        .finished.then(fin, fin);
+      calendario.animate(
+        [
+          { opacity: 0, transform: "scale(0.94)" },
+          { opacity: 1, transform: "none" },
+        ],
+        { duration: reducido ? 1 : 2000, easing: "cubic-bezier(0.22, 1, 0.36, 1)", fill: "backwards" }
+      );
+    };
+
+    if (conDestello) {
+      // Dos frames de margen: se pinta el calendario ya montado (bajo el velo) y luego se retira
+      requestAnimationFrame(() => requestAnimationFrame(animarEntrada));
+    } else {
+      destello.style.opacity = "0";
+      animarEntrada();
+    }
   }
 
   function volverAPuerta() {
@@ -462,6 +526,7 @@
     calendario.hidden = true;
     portada.hidden = false;
     document.body.classList.remove("en-calendario");
+    tenirBarras(null);
     colorBarras("--fondo-portada", false);
     btnSaltar.hidden = false;
     window.scrollTo(0, 0);

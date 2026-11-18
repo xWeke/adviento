@@ -46,7 +46,12 @@ y `window.Sonido`).
 - Las capas de nieve y el fondo de puntos sí usan `transform` (son blandos, no se ven pixelados).
 - Cámara y ratón se interpolan por frame (lerp). Antes de entrar, el ratón desplaza cada capa
   según su profundidad (`RATON_PAN`). El viaje dura `DUR_DOLLY` = 4200 ms con curva suave.
-- La luz del interior (`.destello`) llena la pantalla al cruzar y de ella emerge el calendario.
+- Al cruzar el hueco, un **velo granate** (`.destello`, color `--fondo-cal` + resplandor cálido) cubre la pantalla
+  mientras la cámara aún avanza (`VELO_DESDE`–`VELO_HASTA` del viaje; tiene que estar completo antes de que la puerta
+  se recorte en ~0,84, o asoma el verde). El viaje termina ahí; debajo se cambia de pantalla y el velo se retira
+  (mismo granate que el fondo → sin cambio de color). La rejilla se monta al pulsar la puerta (oculta). La opacidad en
+  línea del velo sigue a 1 hasta el final (`fill: forwards`): ponerla a 0 antes daba un parpadeo de un frame.
+  Se descartó un destello dorado a pantalla completa: al apagarse se veía tosco y con parpadeos (usuario, nov 2026).
 - Si se cambia el layout de la portada hay que volver a llamar a `medir()` (ya se hace en `resize`).
 
 ### Secuencia de entrada (`entrar()`)
@@ -128,9 +133,9 @@ Hay un botón «Saltar intro» si ya se vio antes (`localStorage: adviento-visto
      En iOS (`@supports (-webkit-touch-callout: none)`) van con `z-index: 30`, por encima de `.aurora`/`.bg-dots`/`#nieve`,
      que también son fijas, transparentes y tocan el borde (con z-index 0 el verde no cambiaba, v28).
      `reavivarBarras()` las sustituye por nodos nuevos y hace un scroll de 1 px para forzar el remuestreo (al cambiar
-     de pantalla y al terminar el destello).
+     de pantalla y al retirarse el velo). Mientras el velo sube, `tenirBarras()` lleva las franjas de verde a granate.
    - **Sin `transition` en el fondo de `html`/`body`**: con la transición de 1,2 s Safari leía el verde inicial y no lo actualizaba.
-   - `.destello` (capa fija naranja) usa `display: none` cuando no se usa, no `visibility`/`opacity`.
+   - `.destello` (velo granate) usa `display: none` cuando no se usa, no `visibility`/`opacity`.
    - El `theme-color` se sigue **recreando** (no basta cambiar `content`) para otros navegadores (Chrome Android, Safari antiguos).
    Fuentes (no oficiales de Apple, se contradicen en detalles): 1ar.io «Safari 26 Liquid Glass», grooovinger.com
    «Define the Theme Color for Safari 26». **No se puede probar en Chrome de escritorio**: lo confirma el usuario en su iPhone.

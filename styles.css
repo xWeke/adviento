@@ -403,7 +403,8 @@ body.en-calendario .aurora { opacity: 1; }
 .puerta.abierta .hoja-izq { transform: rotateY(84deg); }
 .puerta.abierta .hoja-der { transform: rotateY(-84deg); }
 
-/* Destello entre portada y calendario */
+/* Velo entre portada y calendario: al cruzar el hueco la luz se apaga hacia el granate del
+   calendario (mismo color que su fondo, así que al retirarse no hay cambio de color) */
 .destello {
   position: fixed;
   inset: 0;
@@ -412,7 +413,9 @@ body.en-calendario .aurora { opacity: 1; }
   opacity: 0;
   display: none; /* solo existe durante el paso por la puerta (lo gestiona app.js); display:none
                     para que Safari en iPhone no la tenga en cuenta al teñir sus barras */
-  background: radial-gradient(circle at 50% 50%, #fff8e8 0%, #ffd98a 40%, #e5973a 75%, #7a2f12 100%);
+  background:
+    radial-gradient(ellipse 70% 60% at 50% 55%, rgba(255, 196, 140, 0.34) 0%, rgba(176, 38, 52, 0.3) 42%, transparent 78%),
+    var(--fondo-cal);
 }
 
 /* ============================================================
