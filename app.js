@@ -207,6 +207,10 @@
 
   const escala = (zrel) => P / (P - zrel);
   const clamp01 = (v) => Math.min(1, Math.max(0, v));
+  const curvaSuave = (t) => t * t * (3 - 2 * t);
+  // Tramo del viaje (0–1) en el que la luz dorada pasa de nada a llenar la pantalla
+  const LUZ_DESDE = 0.68;
+  const LUZ_HASTA = 0.93;
   const suavizar = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
   // fundido entre dos zrel (fracciones de P)
   const fundido = (zrel, desde, hasta) => 1 - clamp01((zrel / P - desde) / (hasta - desde));
@@ -291,9 +295,9 @@
     // (máx. ~1,45x), así que los puntos siguen nítidos.
     bgDots.style.transform = `translate3d(${(-cam.x * sp).toFixed(2)}px, ${(-cam.y * sp).toFixed(2)}px, 0) scale(${rp.toFixed(4)})`;
 
-    // La luz del interior llena la pantalla al cruzar la puerta
-    const sPuerta = escala(-cam.z);
-    const luz = clamp01((sPuerta - 12) / 24);
+    // La luz del interior llena la pantalla al cruzar la puerta. Va por tiempo (no por la
+    // escala del hueco, que se dispara al final) y con curva suave en los dos extremos.
+    const luz = curvaSuave(clamp01((progresoDolly - LUZ_DESDE) / (LUZ_HASTA - LUZ_DESDE)));
     destello.style.opacity = luz.toFixed(3);
     // Fuera del DOM pintado mientras no se usa: Safari en iPhone lo leería como color de sus barras
     destello.style.display = luz > 0.001 ? "block" : "none";
@@ -409,6 +413,11 @@
 
   function mostrarCalendario({ conDestello = false } = {}) {
     pararPortada();
+    if (conDestello) {
+      // La luz tapa toda la pantalla mientras se monta el calendario debajo
+      destello.style.display = "block";
+      destello.style.opacity = "1";
+    }
     portada.hidden = true;
     calendario.hidden = false;
     document.body.classList.add("en-calendario");
@@ -417,40 +426,54 @@
 
     // El fondo de puntos vuelve a su estado normal para el parallax del calendario
     bgDots.style.transform = "";
-    bgDots.animate([{ opacity: 0 }, { opacity: 1 }], { duration: reducido ? 1 : 1200, easing: "ease-out" });
 
-    destello.style.opacity = "0";
-    if (conDestello) {
-      // La luz se disuelve y el calendario emerge desde dentro
-      destello.style.display = "block";
-      destello
-        .animate([{ opacity: 1 }, { opacity: 0 }], { duration: reducido ? 1 : 1600, easing: "ease-out" })
-        .finished.then(() => { destello.style.display = "none"; reavivarBarras(); })
-        .catch(() => { destello.style.display = "none"; reavivarBarras(); });
-      calendario.animate(
-        [
-          { opacity: 0, transform: "scale(0.9)" },
-          { opacity: 1, transform: "none" },
-        ],
-        { duration: reducido ? 1 : 1800, easing: "cubic-bezier(0.16, 1, 0.3, 1)" }
-      );
-    }
-
-    cabecera.animate(
-      [
-        { opacity: 0, transform: "translateY(-30px) scale(1.04)" },
-        { opacity: 1, transform: "none" },
-      ],
-      { duration: reducido ? 1 : 1200, easing: "cubic-bezier(0.2, 0.8, 0.2, 1)" }
-    );
-
-    pintarRejilla(conDestello ? 450 : 100);
+    // Lo pesado (casillas, nieve, música) se hace ahora, aún bajo la luz, para que el
+    // tirón de montarlo no coincida con el fundido.
+    pintarRejilla(conDestello ? 650 : 100);
     animando = false;
 
     // La música empieza al entrar (viene de un clic, así que el navegador la deja sonar)
     btnSonido.hidden = false;
     Sonido.musica.iniciar();
     nevar();
+
+    const animarEntrada = () => {
+      bgDots.animate([{ opacity: 0 }, { opacity: 1 }], { duration: reducido ? 1 : 1400, easing: "ease-out" });
+      cabecera.animate(
+        [
+          { opacity: 0, transform: "translateY(-30px) scale(1.04)" },
+          { opacity: 1, transform: "none" },
+        ],
+        { duration: reducido ? 1 : 1400, easing: "cubic-bezier(0.2, 0.8, 0.2, 1)" }
+      );
+      if (!conDestello) return;
+      // La luz se disuelve a ritmo constante (suave al empezar y al acabar) y el
+      // calendario emerge desde dentro, siguiendo el avance de la cámara.
+      // (opacity 0 ya en línea: al acabar la animación no puede asomar un frame de luz)
+      destello.style.opacity = "0";
+      destello
+        .animate([{ opacity: 1 }, { opacity: 0 }], {
+          duration: reducido ? 1 : 1900,
+          easing: "cubic-bezier(0.45, 0, 0.55, 1)",
+        })
+        .finished.then(() => { destello.style.display = "none"; reavivarBarras(); })
+        .catch(() => { destello.style.display = "none"; reavivarBarras(); });
+      calendario.animate(
+        [
+          { opacity: 0, transform: "scale(0.92)" },
+          { opacity: 1, transform: "none" },
+        ],
+        { duration: reducido ? 1 : 2100, easing: "cubic-bezier(0.22, 1, 0.36, 1)" }
+      );
+    };
+
+    if (conDestello) {
+      // Dos frames de margen: el navegador pinta el calendario ya montado y luego empieza el fundido
+      requestAnimationFrame(() => requestAnimationFrame(animarEntrada));
+    } else {
+      destello.style.opacity = "0";
+      animarEntrada();
+    }
   }
 
   function volverAPuerta() {
