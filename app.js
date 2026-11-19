@@ -723,7 +723,7 @@
   //  la tarjeta. Las casillas anchas (y el 19, que es un regalo) levantan la tapa hacia arriba;
   //  las estrechas se abren como una puerta con la bisagra en el lado más cercano al centro de
   //  la pantalla, para que la hoja nunca se salga por el borde.
-  //  Es una copia de la casilla en position: fixed encima de ella; al cerrar la tarjeta se
+  //  Es una copia de la casilla en position: absolute encima de ella; al cerrar la tarjeta se
   //  vuelve a cerrar y desaparece.
   // ------------------------------------------------------------
   let puertecita = null;
@@ -744,9 +744,11 @@
     const cont = document.createElement("div");
     cont.className = "puertecita";
     cont.setAttribute("aria-hidden", "true");
+    // Coordenadas de la página (position: absolute), no de la pantalla: si se hace scroll
+    // mientras se cierra, la puertecita se mueve con su casilla
     Object.assign(cont.style, {
-      left: `${r.left}px`,
-      top: `${r.top}px`,
+      left: `${r.left + window.scrollX}px`,
+      top: `${r.top + window.scrollY}px`,
       width: `${r.width}px`,
       height: `${r.height}px`,
       borderRadius: cs.borderRadius,

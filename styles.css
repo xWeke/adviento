@@ -714,7 +714,7 @@ body.en-calendario .aurora { opacity: 1; }
 
 /* ---------- Puertecita: la casilla se abre al pulsarla (ver abrirPuertecita en app.js) ---------- */
 .puertecita {
-  position: fixed;
+  position: absolute; /* en coordenadas de la página: sigue a su casilla al hacer scroll */
   z-index: 40;
   pointer-events: none;
   /* El hueco de detrás de la puerta */
