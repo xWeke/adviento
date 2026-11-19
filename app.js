@@ -968,9 +968,39 @@
     return d;
   }
 
+  function foto(src, alt) {
+    const img = document.createElement("img");
+    img.src = src;
+    img.alt = alt || "Foto";
+    img.loading = "lazy";
+    return img;
+  }
+
   function idYoutube(url) {
     const m = url.match(/(?:youtu\.be\/|v=|shorts\/|embed\/)([\w-]{11})/);
     return m ? m[1] : null;
+  }
+
+  // Pista de dónde está escondido el regalo; "pista2" queda tras un botón por si se atasca
+  function pistas(dia) {
+    const caja = document.createElement("div");
+    caja.className = "pista";
+    caja.innerHTML = `<div class="pista-etiqueta">Pista</div><p class="pista-texto"></p>`;
+    $(".pista-texto", caja).textContent = dia.pista;
+    if (dia.pista2) {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "pista-mas";
+      b.textContent = "¿Necesitas otra pista?";
+      b.addEventListener("click", () => {
+        const p = document.createElement("p");
+        p.className = "pista-texto pista-extra";
+        p.textContent = dia.pista2;
+        b.replaceWith(p);
+      });
+      caja.appendChild(b);
+    }
+    return caja;
   }
 
   function construirContenido(dia) {
@@ -980,9 +1010,11 @@
     if (tipo === "vale") {
       const v = document.createElement("div");
       v.className = "vale";
-      v.innerHTML = `<div class="vale-etiqueta">Vale</div><p class="vale-titulo"></p>`;
+      v.innerHTML = `<div class="vale-etiqueta">Vale por</div><p class="vale-titulo"></p>`;
       $(".vale-titulo", v).textContent = dia.titulo || "";
       frag.appendChild(v);
+      if (dia.pista) frag.appendChild(pistas(dia));
+      if (src) frag.appendChild(foto(src, dia.titulo));
       if (texto) frag.appendChild(parrafo(texto));
       return frag;
     }
@@ -991,11 +1023,7 @@
 
     if (tipo === "foto") {
       if (!src) return frag.appendChild(pendiente(tipo)), frag;
-      const img = document.createElement("img");
-      img.src = src;
-      img.alt = dia.titulo || "Foto";
-      img.loading = "lazy";
-      frag.appendChild(img);
+      frag.appendChild(foto(src, dia.titulo));
     } else if (tipo === "video") {
       if (!src) return frag.appendChild(pendiente(tipo)), frag;
       const id = idYoutube(src);
@@ -1032,6 +1060,7 @@
         frag.appendChild(a);
       }
     }
+    if (dia.pista) frag.appendChild(pistas(dia));
     return frag;
   }
 
@@ -1041,7 +1070,9 @@
     const dia = CFG.dias[n] || { tipo: "texto", titulo: `Día ${n}`, texto: "" };
     casillaOrigen = el;
     $(".modal-dia", modal).textContent = ESPECIALES[n] ? `${n} de diciembre · ${ESPECIALES[n]}` : `${n} de diciembre`;
-    $(".modal-titulo", modal).textContent = dia.tipo === "vale" ? "Tienes un vale" : dia.titulo || `Día ${n}`;
+    const titulo = $(".modal-titulo", modal);
+    titulo.textContent = dia.titulo || `Día ${n}`;
+    titulo.hidden = dia.tipo === "vale"; // en el vale el cupón ya lo dice todo
     $(".modal-num", modal).textContent = n;
     // Postal del mismo color que su casilla
     const c = el?.classList;

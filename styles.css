@@ -874,6 +874,14 @@ body.en-calendario .aurora { opacity: 1; }
   border-radius: 12px;
 }
 .modal-cuerpo .yt { aspect-ratio: 16 / 9; height: auto; }
+/* Fotos: al tamaño de la imagen (sin bandas a los lados); la del vale, más pequeña */
+.modal-cuerpo img { width: auto; max-width: 100%; justify-self: center; }
+.modal-cuerpo .vale ~ img {
+  max-height: min(40dvh, 340px);
+  background: none; /* recortadas, sin fondo: flotan sobre la postal */
+  border-radius: 0;
+  filter: drop-shadow(0 10px 14px rgba(40, 0, 6, 0.32));
+}
 
 .vale {
   position: relative;
@@ -886,6 +894,45 @@ body.en-calendario .aurora { opacity: 1; }
   outline: 6px solid var(--rojo);
   margin: 6px;
 }
+/* Pista del escondite (color según el tema de la postal) */
+.pista {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  text-align: center;
+  color: var(--t-texto);
+}
+.pista-etiqueta {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--t-acento);
+}
+.modal-cuerpo .pista-texto {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 19px;
+  line-height: 1.35;
+  text-wrap: balance;
+}
+.modal-cuerpo .pista-extra { animation: aparece-pista 0.45s ease-out both; }
+@keyframes aparece-pista { from { opacity: 0; transform: translateY(6px); } }
+.pista-mas {
+  margin-top: 4px;
+  padding: 8px 16px;
+  border: 1px solid var(--t-linea);
+  border-radius: 999px;
+  background: var(--t-boton);
+  color: var(--t-titulo);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.pista-mas:hover { filter: brightness(0.94); }
+
 .vale-etiqueta {
   font-size: 11px;
   font-weight: 800;
@@ -899,6 +946,7 @@ body.en-calendario .aurora { opacity: 1; }
   font-style: italic;
   font-weight: 700;
   font-size: clamp(22px, 4vw, 28px);
+  text-wrap: balance; /* reparte las líneas: no deja «Bons» sola */
   line-height: 1.2;
 }
 
@@ -993,6 +1041,7 @@ body.en-calendario .aurora { opacity: 1; }
   user-select: none;
 }
 .modal-dia { padding-right: 44px; }
+.modal-titulo[hidden] + .modal-cuerpo { margin-top: 16px; } /* vale: sin título, aire entre fecha y cupón */
 .modal-dia,
 .modal-titulo,
 .modal-cuerpo,

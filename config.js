@@ -40,15 +40,17 @@ window.CONFIG = {
   //   - "foto"    → { titulo, texto, src: "assets/foto1.jpg" }
   //   - "video"   → { titulo, texto, src: "assets/video.mp4" o enlace de YouTube }
   //   - "cancion" → { titulo, texto, src: enlace de Spotify (track/album/playlist) }
-  //   - "vale"    → { titulo: "Vale por…", texto: condiciones }
+  //   - "vale"    → { titulo: lo que regalas (sale tras «VALE POR»), texto: condiciones, src: foto opcional }
   //  "texto" es opcional en todos los tipos.
+  //  Regalo escondido: añade pista: "…" (sale debajo) y, si quieres, pista2: "…"
+  //  (más fácil, tras el botón «¿Necesitas otra pista?»).
   // ----------------------------------------------------------
   dias: {
-    1:  { tipo: "texto",   titulo: "Empieza la cuenta atrás", texto: "Primer día de diciembre. Aquí irá tu primera sorpresa." },
+    1:  { tipo: "vale",    titulo: "una caja de Schoko-Bons", src: "assets/dia1.webp" },
     2:  { tipo: "foto",    titulo: "Un recuerdo", texto: "Aquí irá una foto nuestra.", src: "" },
     3:  { tipo: "cancion", titulo: "Nuestra canción", texto: "Ponla alto.", src: "" },
-    4:  { tipo: "vale",    titulo: "Vale por un desayuno en la cama", texto: "Canjeable cualquier domingo." },
-    5:  { tipo: "texto",   titulo: "Día 5", texto: "Contenido pendiente." },
+    4:  { tipo: "vale",    titulo: "un desayuno en la cama", texto: "Canjeable cualquier domingo." },
+    5:  { tipo: "vale",    titulo: "una copa", src: "assets/dia5.webp" },
     6:  { tipo: "texto",   titulo: "Día 6", texto: "Contenido pendiente." },
     7:  { tipo: "texto",   titulo: "Día 7", texto: "Contenido pendiente." },
     8:  { tipo: "texto",   titulo: "Día 8", texto: "Contenido pendiente." },
