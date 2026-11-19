@@ -826,8 +826,123 @@
     // La tarjeta sale de la luz cuando la puerta va por la mitad
     if (puertecita) await esperar(380);
     abrirModal(n, el);
+    // Cumpleaños: confeti cuando la tarjeta termina de salir
+    if (el.classList.contains("gran-dia")) setTimeout(Confeti.lanzar, 280);
     abriendoDia = false;
   }
+
+  // ------------------------------------------------------------
+  //  Confeti (día del cumpleaños): dos ráfagas desde las esquinas de abajo que suben,
+  //  giran y caen revoloteando. Es un <canvas> en popover para quedar en la "capa superior"
+  //  por encima de la tarjeta (un <dialog> abierto tapa cualquier z-index normal).
+  // ------------------------------------------------------------
+  const Confeti = (() => {
+    const COLORES = ["#f6d77c", "#e9b949", "#c9902c", "#ffe9a8", "#fbf7ef", "#e5392f", "#8e1b2e"];
+    let lienzo, ctx, w, h, raf = 0, ultimo = 0;
+    let piezas = [];
+
+    function preparar() {
+      if (lienzo) return;
+      lienzo = document.createElement("canvas");
+      lienzo.className = "confeti";
+      lienzo.setAttribute("aria-hidden", "true");
+      if ("popover" in HTMLElement.prototype) lienzo.popover = "manual";
+      document.body.appendChild(lienzo);
+      ctx = lienzo.getContext("2d");
+    }
+
+    function medir() {
+      const dpr = Math.min(2, window.devicePixelRatio || 1);
+      w = window.innerWidth;
+      h = window.innerHeight;
+      lienzo.width = Math.round(w * dpr);
+      lienzo.height = Math.round(h * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    // Lo vuelve a poner encima de todo (si el diálogo se abrió después, quedaría debajo)
+    function alFrente() {
+      if (!lienzo.popover) return;
+      try {
+        if (lienzo.matches(":popover-open")) lienzo.hidePopover();
+        lienzo.showPopover();
+      } catch {}
+    }
+
+    function rafaga(x, y, angulo, cuantas, fuerza) {
+      for (let i = 0; i < cuantas; i++) {
+        const a = angulo + (Math.random() - 0.5) * 0.9;
+        const v = fuerza * (0.55 + Math.random() * 0.6);
+        piezas.push({
+          x, y,
+          vx: Math.cos(a) * v,
+          vy: Math.sin(a) * v,
+          giro: Math.random() * Math.PI * 2,
+          vgiro: (Math.random() - 0.5) * 0.3,
+          fase: Math.random() * Math.PI * 2, // volteo (da la sensación de papel que gira)
+          vfase: 0.08 + Math.random() * 0.12,
+          tam: 7 + Math.random() * 6,
+          redonda: Math.random() < 0.25,
+          color: COLORES[(Math.random() * COLORES.length) | 0],
+          vida: 0,
+        });
+      }
+    }
+
+    function paso(t) {
+      const dt = Math.min(2.5, (t - ultimo) / 16.67);
+      ultimo = t;
+      ctx.clearRect(0, 0, w, h);
+      piezas = piezas.filter((p) => p.y < h + 30 && p.vida < 420);
+      const roce = Math.pow(0.985, dt);
+      for (const p of piezas) {
+        p.vx *= roce;
+        p.vy = Math.min(p.vy * roce + 0.32 * dt, 3.2); // al caer, planea (velocidad límite)
+        p.x += (p.vx + Math.sin(p.fase) * 0.9) * dt;
+        p.y += p.vy * dt;
+        p.giro += p.vgiro * dt;
+        p.fase += p.vfase * dt;
+        p.vida += dt;
+        ctx.save();
+        ctx.globalAlpha = Math.min(1, (420 - p.vida) / 60);
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.giro);
+        ctx.scale(1, Math.cos(p.fase));
+        ctx.fillStyle = p.color;
+        if (p.redonda) {
+          ctx.beginPath();
+          ctx.arc(0, 0, p.tam * 0.36, 0, Math.PI * 2);
+          ctx.fill();
+        } else {
+          ctx.fillRect(-p.tam / 2, -p.tam * 0.3, p.tam, p.tam * 0.6);
+        }
+        ctx.restore();
+      }
+      if (piezas.length) {
+        raf = requestAnimationFrame(paso);
+      } else {
+        raf = 0;
+        ctx.clearRect(0, 0, w, h);
+        try { if (lienzo.popover) lienzo.hidePopover(); } catch {}
+      }
+    }
+
+    function lanzar() {
+      preparar();
+      medir();
+      alFrente();
+      const fuerza = Math.max(h, 560) * 0.04;
+      const cuantas = w < 600 ? 80 : 120;
+      rafaga(-10, h + 10, -Math.PI / 3, cuantas, fuerza); // esquina izquierda, hacia arriba y al centro
+      rafaga(w + 10, h + 10, (-2 * Math.PI) / 3, cuantas, fuerza); // esquina derecha
+      if (!raf) {
+        ultimo = performance.now();
+        raf = requestAnimationFrame(paso);
+      }
+    }
+
+    return { lanzar };
+  })();
 
   // ------------------------------------------------------------
   //  Modal del día

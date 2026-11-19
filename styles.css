@@ -755,6 +755,22 @@ body.en-calendario .aurora { opacity: 1; }
 }
 .puertecita-dorso.tapa { transform: rotateX(180deg); }
 
+/* Confeti del cumpleaños: lienzo a pantalla completa en la capa superior (popover) */
+.confeti {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  overflow: visible;
+  pointer-events: none;
+}
+
 /* La tarjeta y su fondo oscuro entran suaves */
 .modal[open]::backdrop { animation: velo-modal 0.45s ease-out; }
 @keyframes velo-modal { from { opacity: 0; } }
