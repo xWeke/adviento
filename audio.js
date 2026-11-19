@@ -558,13 +558,28 @@ window.Sonido = (() => {
 
   // ----------------------------------------------------------
   //  Bajar la música un momento (para que se oiga el confeti) y volver a subirla.
-  //  Safari en iPhone ignora el volumen del <audio>, así que el mp3 se pasa por Web Audio
-  //  (una ganancia) la primera vez que hace falta; si no se puede, la música sigue igual.
+  //  · Ordenador: se baja el volumen del <audio> directamente.
+  //  · iPhone: Safari ignora ese volumen, así que el mp3 se pasa por Web Audio (una
+  //    ganancia). Solo ahí y nunca en file:// (el navegador dejaría la música muda por
+  //    seguridad, y una vez conectado no se puede deshacer). Si no se puede, sigue igual.
   // ----------------------------------------------------------
   let volArchivo = null;
+  let volumenLibre = null; // ¿el navegador deja cambiar el volumen del <audio>?
+  let reponer = 0;
+
+  function puedeCambiarVolumen(el) {
+    if (volumenLibre === null) {
+      const antes = el.volume;
+      try { el.volume = 0.5; } catch {}
+      volumenLibre = Math.abs(el.volume - 0.5) < 0.01;
+      try { el.volume = antes; } catch {}
+    }
+    return volumenLibre;
+  }
+
   function ganchoArchivo(el) {
     if (volArchivo) return volArchivo;
-    if (!ctx.createMediaElementSource) return null;
+    if (location.protocol === "file:" || ctx.state !== "running" || !ctx.createMediaElementSource) return null;
     try {
       const fuente = ctx.createMediaElementSource(el);
       volArchivo = ctx.createGain();
@@ -576,10 +591,22 @@ window.Sonido = (() => {
   }
 
   function agacharMusica(nivel = 0.2, mantener = 2.6) {
-    if (!estado.sonando || !listo()) return;
-    const nodo = estado.audio ? ganchoArchivo(estado.audio) : bus;
+    if (!estado.sonando) return;
+    const el = estado.audio;
+
+    if (el && !volArchivo && puedeCambiarVolumen(el)) {
+      clearTimeout(reponer);
+      fundirArchivo(el, nivel, 250);
+      reponer = setTimeout(() => {
+        if (estado.sonando && estado.audio === el) fundirArchivo(el, 1, 1800);
+      }, mantener * 1000);
+      return;
+    }
+
+    if (!listo()) return;
+    const nodo = el ? ganchoArchivo(el) : bus;
     if (!nodo) return;
-    const normal = estado.audio ? 1 : 0.9; // 0,9 = volumen de la caja de música (arrancarSintetica)
+    const normal = el ? 1 : 0.9; // 0,9 = volumen de la caja de música (arrancarSintetica)
     const t = ctx.currentTime;
     const g = nodo.gain;
     g.cancelScheduledValues(t);
