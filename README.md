@@ -17,7 +17,7 @@ Servir la carpeta en local (por ejemplo `npx serve .` o la extensión Live Serve
 - Todo desbloqueado: `?preview=adrian-prueba`
 - Simular una fecha: `?preview=adrian-prueba&hoy=2026-12-05`
 
-La clave del modo prueba está en `config.js` (`clavePreview`). En modo prueba no se guardan los días abiertos.
+La clave del modo prueba está en `config.js` (`clavePreview`). En modo prueba los días abiertos se guardan aparte de los de verdad; añade `&borrar` para vaciarlos.
 
 ## Publicar en GitHub Pages
 1. Crear un repo y subir el contenido de esta carpeta.

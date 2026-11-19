@@ -125,11 +125,18 @@
   }
 
   // Días abiertos (en modo prueba no se guardan)
-  const CLAVE_ABIERTOS = "adviento-abiertos-" + CFG.anio;
-  const abiertos = new Set(modoPrueba ? [] : JSON.parse(store.get(CLAVE_ABIERTOS) || "[]"));
+  // En modo prueba se guardan aparte, para no mezclarlos con los de verdad; &borrar los vacía
+  const CLAVE_ABIERTOS = "adviento-abiertos-" + (modoPrueba ? "prueba-" : "") + CFG.anio;
+  if (modoPrueba && params.has("borrar")) store.set(CLAVE_ABIERTOS, "[]");
+  let abiertosGuardados = [];
+  try { abiertosGuardados = JSON.parse(store.get(CLAVE_ABIERTOS) || "[]"); } catch {}
+  const abiertos = new Set(abiertosGuardados);
+  // Pide al navegador que no borre lo guardado aunque pase tiempo sin abrir la web
+  // (Safari lo borra tras semanas sin uso; la app de la pantalla de inicio ya está a salvo)
+  try { navigator.storage?.persist?.().catch(() => {}); } catch {}
   function marcarAbierto(n) {
     abiertos.add(n);
-    if (!modoPrueba) store.set(CLAVE_ABIERTOS, JSON.stringify([...abiertos]));
+    store.set(CLAVE_ABIERTOS, JSON.stringify([...abiertos]));
   }
 
   // ------------------------------------------------------------
@@ -682,7 +689,8 @@
       b.className = `casilla ${clases}`;
       b.dataset.dia = n;
       b.setAttribute("aria-label", `Día ${n}`);
-      if (abiertos.has(n)) b.classList.add("abierta");
+      // Abierta si la abrió aquí o si su día ya pasó (así se ve igual en cualquier dispositivo)
+      if (abiertos.has(n) || diasQueFaltan(n) < 0) b.classList.add("abierta");
       if (esHoy(n)) b.classList.add("hoy");
 
       if (b.classList.contains("gran-dia")) {
@@ -1044,6 +1052,7 @@ ${navigator.userAgent.match(/(Edg|Chrome|Firefox)\/[\d.]+/g)?.join(" ")}`;
   }
 
   if (modoPrueba) {
-    mostrarToast(hoySimulado ? `Modo prueba · simulando ${params.get("hoy")}` : "Modo prueba · todo desbloqueado");
+    const aviso = hoySimulado ? `Modo prueba · simulando ${params.get("hoy")}` : "Modo prueba · todo desbloqueado";
+    mostrarToast(params.has("borrar") ? `${aviso} · abiertos borrados` : aviso);
   }
 })();

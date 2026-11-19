@@ -91,7 +91,9 @@ Hay un botón «Saltar intro» si ya se vio antes (`localStorage: adviento-visto
   usuario: el cumpleaños pesa más que el 24. Añadir otro día especial exige hacerle hueco 2×2 en `DISPOSICION`.
 - **Bloqueo por fecha**: el día N se abre si hoy ≥ N de diciembre de `anio`. Casilla futura → tiembla + toast.
   Los días abiertos se guardan en `localStorage` (`adviento-abiertos-2026`).
-- **Modo prueba** (solo para Adrián): `?preview=adrian-prueba` abre todo sin guardar estado;
+- **Modo prueba** (solo para Adrián): `?preview=adrian-prueba` abre todo; los abiertos se guardan en otra clave
+  (`adviento-abiertos-prueba-AÑO`) y `&borrar` los vacía; los días ya pasados salen siempre
+  apagados (abierta) aunque no consten en localStorage, y se pide `navigator.storage.persist()`;
   `&hoy=2026-12-05` simula una fecha; `?debug` muestra un recuadro con versión, fps y datos de la cámara.
 - Modal `<dialog>` por tipo: `texto`, `foto`, `video` (mp4 propio o YouTube), `cancion` (Spotify),
   `vale` (tarjeta tipo cupón). Si `src` está vacío muestra «Aquí irá…». Se vacía al cerrar (para el audio/vídeo).
