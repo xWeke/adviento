@@ -11,6 +11,17 @@
   const bgDots = $(".bg-dots");
   const destello = $(".destello");
 
+  // Sin zoom en iPhone: Safari ignora user-scalable=no, así que se corta el gesto de pellizco
+  // (el doble toque ya lo quita touch-action: manipulation en styles.css)
+  ["gesturestart", "gesturechange", "gestureend"].forEach((t) =>
+    document.addEventListener(t, (e) => e.preventDefault(), { passive: false })
+  );
+  document.addEventListener(
+    "touchmove",
+    (e) => { if (e.touches.length > 1) e.preventDefault(); },
+    { passive: false }
+  );
+
   // Color de las barras del navegador del móvil (arriba y abajo): sigue al fondo de
   // cada pantalla, que sale de los tokens de styles.css.
   //  · Safari en iPhone no reacciona a cambiar el `content` de un <meta> existente:
