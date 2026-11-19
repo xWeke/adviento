@@ -712,21 +712,27 @@
   }
 
   // ------------------------------------------------------------
-  //  Puertecita: al abrir un día, la casilla se abre como una puerta pequeña (el 19, que es
-  //  un regalo, levanta la tapa) y deja ver la luz de dentro; de ahí sale la tarjeta.
+  //  Puertecita: al abrir un día, la casilla se abre y deja ver la luz de dentro; de ahí sale
+  //  la tarjeta. Las casillas anchas (y el 19, que es un regalo) levantan la tapa hacia arriba;
+  //  las estrechas se abren como una puerta con la bisagra en el lado más cercano al centro de
+  //  la pantalla, para que la hoja nunca se salga por el borde.
   //  Es una copia de la casilla en position: fixed encima de ella; al cerrar la tarjeta se
   //  vuelve a cerrar y desaparece.
   // ------------------------------------------------------------
   let puertecita = null;
   let abriendoDia = false;
-  const PERSPECTIVA = "perspective(700px)";
 
   function abrirPuertecita(el) {
     if (reducido) return;
     const r = el.getBoundingClientRect();
     const cs = getComputedStyle(el);
-    const esRegalo = el.classList.contains("gran-dia");
-    const giro = (g) => `${PERSPECTIVA} ${esRegalo ? `rotateX(${g}deg)` : `rotateY(${-g}deg)`}`;
+    const esTapa = el.classList.contains("gran-dia") || el.classList.contains("w2");
+    const bisagraDcha = !esTapa && r.left + r.width / 2 < window.innerWidth / 2;
+    // Al levantarse hacia ti, la tapa se ve más ancha por la perspectiva: cuanto más alta es,
+    // más lejos va la cámara (así no crece más que el margen de la pantalla)
+    const persp = esTapa ? Math.max(700, r.height * 9) : 700;
+    const giro = (g) =>
+      `perspective(${persp}px) ${esTapa ? `rotateX(${g}deg)` : `rotateY(${bisagraDcha ? g : -g}deg)`}`;
 
     const cont = document.createElement("div");
     cont.className = "puertecita";
@@ -741,7 +747,7 @@
     cont.innerHTML = `<span class="puertecita-luz"></span><span class="puertecita-hoja"></span>`;
     const luz = cont.firstChild;
     const hoja = cont.lastChild;
-    hoja.style.transformOrigin = esRegalo ? "50% 0" : "0 50%";
+    hoja.style.transformOrigin = esTapa ? "50% 0" : bisagraDcha ? "100% 50%" : "0 50%";
 
     // Cara de delante: la casilla tal cual estaba (sin marca de abierta ni halo de hoy)
     const cara = el.cloneNode(true);
@@ -752,7 +758,7 @@
     cara.classList.add("puertecita-cara");
     // Cara de detrás: el mismo color, más oscuro (se ve cuando la hoja pasa de 90°)
     const dorso = document.createElement("span");
-    dorso.className = "puertecita-dorso" + (esRegalo ? " regalo" : "");
+    dorso.className = "puertecita-dorso" + (esTapa ? " tapa" : "");
     dorso.style.backgroundColor = cs.backgroundColor;
     dorso.style.backgroundImage = cs.backgroundImage;
     hoja.append(cara, dorso);

@@ -753,7 +753,7 @@ body.en-calendario .aurora { opacity: 1; }
   transform: rotateY(180deg);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
-.puertecita-dorso.regalo { transform: rotateX(180deg); }
+.puertecita-dorso.tapa { transform: rotateX(180deg); }
 
 /* La tarjeta y su fondo oscuro entran suaves */
 .modal[open]::backdrop { animation: velo-modal 0.45s ease-out; }
