@@ -820,23 +820,24 @@ body.en-calendario .aurora { opacity: 1; }
   backdrop-filter: blur(4px);
 }
 
-.modal-tarjeta { position: relative; padding: 32px 28px 30px; }
+.modal-tarjeta { position: relative; padding: 34px 30px 26px; overflow: hidden; }
 
 .modal-cerrar {
   position: absolute;
-  top: 12px;
-  right: 12px;
+  top: 18px;
+  right: 18px;
+  z-index: 2;
   width: 36px;
   height: 36px;
   border: 0;
   border-radius: 50%;
-  background: rgba(59, 13, 20, 0.08);
-  color: var(--granate-txt);
+  background: var(--t-boton);
+  color: var(--t-titulo);
   font-size: 22px;
   line-height: 1;
   cursor: pointer;
 }
-.modal-cerrar:hover { background: rgba(59, 13, 20, 0.16); }
+.modal-cerrar:hover { filter: brightness(0.92); }
 
 .modal-dia {
   margin: 0;
@@ -844,7 +845,7 @@ body.en-calendario .aurora { opacity: 1; }
   font-weight: 800;
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: var(--rojo);
+  color: var(--t-acento);
 }
 .modal-titulo {
   margin: 8px 0 16px;
@@ -853,10 +854,10 @@ body.en-calendario .aurora { opacity: 1; }
   font-weight: 800;
   line-height: 1.12;
   letter-spacing: -0.02em;
-  color: var(--granate);
+  color: var(--t-titulo);
 }
 
-.modal-cuerpo { display: grid; gap: 16px; font-size: 16px; line-height: 1.6; }
+.modal-cuerpo { display: grid; gap: 16px; font-size: 16px; line-height: 1.6; color: var(--t-texto); }
 .modal-cuerpo p { margin: 0; white-space: pre-line; }
 
 .modal-cuerpo img,
@@ -904,10 +905,123 @@ body.en-calendario .aurora { opacity: 1; }
 .pendiente {
   padding: 18px;
   border-radius: 10px;
-  background: rgba(59, 13, 20, 0.06);
-  color: var(--granate-txt);
+  background: color-mix(in srgb, var(--t-texto) 8%, transparent);
+  color: var(--t-texto);
   font-size: 14px;
   text-align: center;
+}
+
+/* ---------- Postal: cada tarjeta toma el color de su casilla (data-tema, ver abrirModal) ---------- */
+.modal {
+  --t-fondo: var(--crema);
+  --t-texto: #2a1215;
+  --t-titulo: var(--granate);
+  --t-acento: var(--rojo);
+  --t-linea: rgba(59, 13, 20, 0.26);
+  --t-marca: rgba(59, 13, 20, 0.07);
+  --t-boton: rgba(59, 13, 20, 0.08);
+  background:
+    radial-gradient(ellipse 90% 60% at 20% 0%, rgba(255, 255, 255, 0.16), transparent 70%),
+    var(--t-fondo);
+}
+.modal[data-tema="rosado"] { --t-fondo: var(--rosado); --t-texto: var(--granate-txt); }
+.modal[data-tema="rojo"] {
+  --t-fondo: var(--rojo);
+  --t-texto: #fff4ef;
+  --t-titulo: #fff;
+  --t-acento: #ffe2a6;
+  --t-linea: rgba(255, 240, 230, 0.5);
+  --t-marca: rgba(255, 255, 255, 0.11);
+  --t-boton: rgba(255, 255, 255, 0.18);
+}
+.modal[data-tema="granate"] {
+  --t-fondo: var(--vino);
+  --t-texto: #f7ece9;
+  --t-titulo: #fff;
+  --t-acento: var(--oro-1);
+  --t-linea: rgba(246, 215, 124, 0.42);
+  --t-marca: rgba(255, 255, 255, 0.07);
+  --t-boton: rgba(255, 255, 255, 0.12);
+}
+.modal[data-tema="oro"] {
+  --t-texto: #3a2508;
+  --t-titulo: #2b1803;
+  --t-acento: #8e1b14;
+  --t-linea: rgba(90, 55, 5, 0.38);
+  --t-marca: rgba(255, 255, 255, 0.34);
+  --t-boton: rgba(90, 55, 5, 0.12);
+  background:
+    radial-gradient(ellipse 90% 60% at 20% 0%, rgba(255, 255, 255, 0.3), transparent 70%),
+    linear-gradient(140deg, #f8e3a0 0%, var(--oro-1) 35%, #e7b955 70%, #d29f3e 100%);
+}
+.modal[data-tema="nochebuena"] {
+  --t-texto: #f7ece9;
+  --t-titulo: #fff;
+  --t-acento: var(--oro-1);
+  --t-linea: rgba(246, 215, 124, 0.55);
+  --t-marca: rgba(246, 215, 124, 0.09);
+  --t-boton: rgba(255, 255, 255, 0.12);
+  background:
+    radial-gradient(ellipse 80% 70% at 30% 10%, rgba(255, 120, 120, 0.16), transparent 70%),
+    linear-gradient(150deg, #5c1421 0%, #3f0c16 55%, #2a070e 100%);
+}
+
+/* Doble filete de postal: dos líneas finas */
+.modal-tarjeta::before,
+.modal-tarjeta::after {
+  content: "";
+  position: absolute;
+  inset: 10px;
+  border: 1.5px solid var(--t-linea);
+  border-radius: 8px;
+  pointer-events: none;
+}
+.modal-tarjeta::after { inset: 15px; border-width: 1px; border-radius: 5px; }
+
+/* Número del día, enorme y apagado, de fondo */
+.modal-num {
+  position: absolute;
+  right: 0.04em;
+  bottom: -0.16em;
+  z-index: 0;
+  font-size: clamp(150px, 34vw, 210px);
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -0.05em;
+  color: var(--t-marca);
+  pointer-events: none;
+  user-select: none;
+}
+.modal-dia { padding-right: 44px; }
+.modal-dia,
+.modal-titulo,
+.modal-cuerpo,
+.modal-firma { position: relative; z-index: 1; }
+
+/* Firma */
+.modal-firma {
+  margin: 22px 4px 0 0;
+  text-align: right;
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 700;
+  font-size: 22px;
+  color: var(--t-acento);
+}
+
+/* El vale contrasta con el color de la postal */
+.modal[data-tema="rojo"] .vale {
+  background: var(--crema);
+  color: var(--rojo);
+  border-color: rgba(229, 57, 47, 0.45);
+  outline-color: var(--crema);
+}
+.modal[data-tema="granate"] .vale,
+.modal[data-tema="nochebuena"] .vale {
+  background: var(--oro-1);
+  color: #3a1208;
+  border-color: rgba(58, 18, 8, 0.35);
+  outline-color: var(--oro-1);
 }
 
 /* ============================================================

@@ -1037,6 +1037,16 @@
     casillaOrigen = el;
     $(".modal-dia", modal).textContent = ESPECIALES[n] ? `${n} de diciembre · ${ESPECIALES[n]}` : `${n} de diciembre`;
     $(".modal-titulo", modal).textContent = dia.tipo === "vale" ? "Tienes un vale" : dia.titulo || `Día ${n}`;
+    $(".modal-num", modal).textContent = n;
+    // Postal del mismo color que su casilla
+    const c = el?.classList;
+    modal.dataset.tema = !c ? "crema"
+      : c.contains("gran-dia") ? "oro"
+      : c.contains("nochebuena") ? "nochebuena"
+      : c.contains("c-rojo") ? "rojo"
+      : c.contains("c-granate") ? "granate"
+      : c.contains("c-rosado") ? "rosado"
+      : "crema";
     const cuerpo = $(".modal-cuerpo", modal);
     cuerpo.replaceChildren(construirContenido(dia));
 

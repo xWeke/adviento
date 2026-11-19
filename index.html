@@ -31,7 +31,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800;900&family=Playfair+Display:ital,wght@1,600;1,700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=50" />
+  <link rel="stylesheet" href="styles.css?v=51" />
 </head>
 <body>
   <!-- Franjas que tiñen las barras de Safari en iPhone (ver .barra-safari en styles.css) -->
@@ -88,10 +88,12 @@
   <!-- ===================== MODAL DEL DÍA ===================== -->
   <dialog class="modal" id="modal">
     <div class="modal-tarjeta">
+      <span class="modal-num" aria-hidden="true"></span>
       <button class="modal-cerrar" type="button" aria-label="Cerrar">×</button>
       <p class="modal-dia"></p>
       <h2 class="modal-titulo"></h2>
       <div class="modal-cuerpo"></div>
+      <p class="modal-firma">— <span data-de></span></p>
     </div>
   </dialog>
 
@@ -105,8 +107,8 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-  <script src="config.js?v=50"></script>
-  <script src="audio.js?v=50"></script>
-  <script src="app.js?v=50"></script>
+  <script src="config.js?v=51"></script>
+  <script src="audio.js?v=51"></script>
+  <script src="app.js?v=51"></script>
 </body>
 </html>
