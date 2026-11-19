@@ -35,6 +35,8 @@
 html, body { margin: 0; min-height: 100%; }
 /* Sin zoom con doble toque (el pellizco lo bloquea app.js) */
 html { touch-action: manipulation; }
+/* Portada fija: sin rebote elástico al tirar de la página */
+html:not(.en-calendario) { overscroll-behavior: none; }
 
 /* Franjas para las barras de Safari en iPhone (iOS 26 ignora theme-color y tiñe sus barras con
    un elemento fijo, opaco y de ancho completo pegado al borde de arriba/abajo). Quedan por debajo de

@@ -16,9 +16,11 @@
   ["gesturestart", "gesturechange", "gestureend"].forEach((t) =>
     document.addEventListener(t, (e) => e.preventDefault(), { passive: false })
   );
+  // En la portada tampoco se desliza con el dedo (ni el rebote elástico de Safari); en el
+  // calendario el scroll sigue normal. El scroll de 1 px de reavivarBarras no se ve afectado.
   document.addEventListener(
     "touchmove",
-    (e) => { if (e.touches.length > 1) e.preventDefault(); },
+    (e) => { if (e.touches.length > 1 || !portada.hidden) e.preventDefault(); },
     { passive: false }
   );
 
