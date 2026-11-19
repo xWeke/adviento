@@ -21,6 +21,9 @@ window.Sonido = (() => {
   // en algunos equipos Windows justo cuando arranca la animación.
   let ctx = null;
   try { ctx = AC ? new AC() : null; } catch { ctx = null; }
+  // iPhone: que los sonidos de Web Audio suenen como la música aunque el móvil esté en
+  // silencio (si no, al pasar la música por Web Audio para bajarla se callaría)
+  try { if (navigator.audioSession) navigator.audioSession.type = "playback"; } catch {}
 
   const azar = (a, b) => a + Math.random() * (b - a);
   const listo = () => {
@@ -289,6 +292,7 @@ window.Sonido = (() => {
   // ----------------------------------------------------------
   function confeti() {
     if (silenciada || !listo()) return;
+    agacharMusica();
     const t = ctx.currentTime + 0.02;
     const salida = ctx.createGain();
     salida.gain.value = 0.9;
@@ -550,6 +554,39 @@ window.Sonido = (() => {
     estado.cancion = 0;
     programar();
     estado.timer = setInterval(programar, 120);
+  }
+
+  // ----------------------------------------------------------
+  //  Bajar la música un momento (para que se oiga el confeti) y volver a subirla.
+  //  Safari en iPhone ignora el volumen del <audio>, así que el mp3 se pasa por Web Audio
+  //  (una ganancia) la primera vez que hace falta; si no se puede, la música sigue igual.
+  // ----------------------------------------------------------
+  let volArchivo = null;
+  function ganchoArchivo(el) {
+    if (volArchivo) return volArchivo;
+    if (!ctx.createMediaElementSource) return null;
+    try {
+      const fuente = ctx.createMediaElementSource(el);
+      volArchivo = ctx.createGain();
+      fuente.connect(volArchivo).connect(ctx.destination);
+    } catch {
+      return null;
+    }
+    return volArchivo;
+  }
+
+  function agacharMusica(nivel = 0.2, mantener = 2.6) {
+    if (!estado.sonando || !listo()) return;
+    const nodo = estado.audio ? ganchoArchivo(estado.audio) : bus;
+    if (!nodo) return;
+    const normal = estado.audio ? 1 : 0.9; // 0,9 = volumen de la caja de música (arrancarSintetica)
+    const t = ctx.currentTime;
+    const g = nodo.gain;
+    g.cancelScheduledValues(t);
+    g.setValueAtTime(g.value, t);
+    g.linearRampToValueAtTime(normal * nivel, t + 0.25);
+    g.setValueAtTime(normal * nivel, t + mantener);
+    g.linearRampToValueAtTime(normal, t + mantener + 1.8);
   }
 
   function parar(ms = 1200) {
