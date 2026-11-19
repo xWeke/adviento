@@ -131,9 +131,6 @@
   let abiertosGuardados = [];
   try { abiertosGuardados = JSON.parse(store.get(CLAVE_ABIERTOS) || "[]"); } catch {}
   const abiertos = new Set(abiertosGuardados);
-  // Pide al navegador que no borre lo guardado aunque pase tiempo sin abrir la web
-  // (Safari lo borra tras semanas sin uso; la app de la pantalla de inicio ya está a salvo)
-  try { navigator.storage?.persist?.().catch(() => {}); } catch {}
   function marcarAbierto(n) {
     abiertos.add(n);
     store.set(CLAVE_ABIERTOS, JSON.stringify([...abiertos]));
@@ -689,8 +686,7 @@
       b.className = `casilla ${clases}`;
       b.dataset.dia = n;
       b.setAttribute("aria-label", `Día ${n}`);
-      // Abierta si la abrió aquí o si su día ya pasó (así se ve igual en cualquier dispositivo)
-      if (abiertos.has(n) || diasQueFaltan(n) < 0) b.classList.add("abierta");
+      if (abiertos.has(n)) b.classList.add("abierta");
       if (esHoy(n)) b.classList.add("hoy");
 
       if (b.classList.contains("gran-dia")) {
