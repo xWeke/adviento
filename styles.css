@@ -252,6 +252,37 @@ body.en-calendario .aurora { opacity: 1; }
   animation: latido 2.4s ease-in-out infinite;
 }
 
+/* Cuenta atrás (antes del 1 de diciembre) en el lugar de "Llama para entrar" */
+.portada-cta.cuenta {
+  display: grid;
+  justify-items: center;
+  gap: calc(8px * var(--zoom, 1));
+  animation: none;
+}
+.cuenta-titulo {
+  font-size: calc(11px * var(--zoom, 1));
+  font-weight: 800;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--texto-suave);
+}
+.cuenta-reloj { display: flex; gap: calc(14px * var(--zoom, 1)); }
+.cuenta-bloque { display: grid; justify-items: center; min-width: calc(34px * var(--zoom, 1)); }
+.cuenta-bloque b {
+  font-size: calc(26px * var(--zoom, 1));
+  font-weight: 900;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.cuenta-bloque small {
+  margin-top: calc(4px * var(--zoom, 1));
+  font-size: calc(10px * var(--zoom, 1));
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--texto-suave);
+}
+
 @keyframes latido {
   0%, 100% { opacity: 0.55; }
   50% { opacity: 1; }

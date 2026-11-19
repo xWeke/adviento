@@ -87,6 +87,10 @@
     return hoySimulado && !isNaN(hoySimulado) ? hoySimulado : new Date();
   }
 
+  // Reloj que avanza (también con fecha simulada, que arranca a las 9:00 de ese día)
+  const desfaseReloj = hoySimulado && !isNaN(hoySimulado) ? hoySimulado - Date.now() : 0;
+  const ahora = () => new Date(Date.now() + desfaseReloj);
+
   function fechaDia(n) {
     return new Date(CFG.anio, 11, n, 0, 0, 0);
   }
@@ -389,6 +393,65 @@
   // ------------------------------------------------------------
   if (store.get("adviento-visto")) btnSaltar.hidden = false;
 
+  // ------------------------------------------------------------
+  //  Cuenta atrás: antes del 1 de diciembre la puerta sigue cerrada
+  // ------------------------------------------------------------
+  const kickerPortada = $(".portada .kicker");
+  const ctaPortada = $(".portada-cta");
+  const textoKicker = kickerPortada.textContent;
+  const textoCta = ctaPortada.textContent;
+  const ariaPuerta = puerta.getAttribute("aria-label");
+  let puertaCerrada = false;
+  let relojCuenta = null;
+
+  const dos = (v) => String(v).padStart(2, "0");
+  function pintarCuenta() {
+    const resta = fechaDia(1) - ahora();
+    if (resta <= 0 || (modoPrueba && !hoySimulado)) {
+      // Ya es diciembre: la portada vuelve a ser la de siempre
+      puertaCerrada = false;
+      clearInterval(relojCuenta);
+      relojCuenta = null;
+      kickerPortada.textContent = textoKicker;
+      ctaPortada.textContent = textoCta;
+      ctaPortada.classList.remove("cuenta");
+      puerta.setAttribute("aria-label", ariaPuerta);
+      if (store.get("adviento-visto")) btnSaltar.hidden = false;
+      return;
+    }
+    puertaCerrada = true;
+    btnSaltar.hidden = true;
+    const seg = Math.floor(resta / 1000);
+    const d = Math.floor(seg / 86400);
+    const h = Math.floor((seg % 86400) / 3600);
+    const m = Math.floor((seg % 3600) / 60);
+    const sg = seg % 60;
+    const bloque = (num, txt) => `<span class="cuenta-bloque"><b>${num}</b><small>${txt}</small></span>`;
+    kickerPortada.textContent = "Diciembre está a punto de llegar";
+    ctaPortada.classList.add("cuenta");
+    ctaPortada.innerHTML =
+      `<span class="cuenta-titulo">La puerta se abre en</span><span class="cuenta-reloj">` +
+      (d > 0 ? bloque(d, d === 1 ? "día" : "días") : "") +
+      bloque(dos(h), "horas") + bloque(dos(m), "min") + bloque(dos(sg), "seg") +
+      `</span>`;
+    puerta.setAttribute("aria-label", "La puerta se abre el 1 de diciembre");
+  }
+  pintarCuenta();
+  if (puertaCerrada) relojCuenta = setInterval(pintarCuenta, 1000);
+
+  // Si llama antes de tiempo, la puerta solo tiembla
+  let avisoCerrada = 0;
+  function llamarAntesDeTiempo() {
+    sacudirPuerta(0);
+    setTimeout(() => sacudirPuerta(1), 260);
+    const frases = [
+      "Todavía no… vuelve el 1 de diciembre 🎄",
+      "Paciencia, que aún no es diciembre ✨",
+      "La puerta sigue cerrada con llave 🔒",
+    ];
+    mostrarToast(frases[avisoCerrada++ % frases.length]);
+  }
+
   // Impacto de un nudillo: la puerta cede de golpe y vuelve con un pequeño rebote
   const marcoPuerta = $(".puerta-marco");
   function sacudirPuerta(i) {
@@ -528,7 +591,7 @@
     document.body.classList.remove("en-calendario");
     tenirBarras(null);
     colorBarras("--fondo-portada", false);
-    btnSaltar.hidden = false;
+    if (!puertaCerrada) btnSaltar.hidden = false;
     window.scrollTo(0, 0);
     reiniciarCamara();
     medir();
@@ -548,9 +611,9 @@
   document.addEventListener("sonido-cambio", pintarBtnSonido);
   pintarBtnSonido();
 
-  puerta.addEventListener("click", entrar);
+  puerta.addEventListener("click", () => (puertaCerrada ? llamarAntesDeTiempo() : entrar()));
   btnSaltar.addEventListener("click", () => {
-    if (animando) return;
+    if (animando || puertaCerrada) return;
     mostrarCalendario();
   });
   $("#volver").addEventListener("click", volverAPuerta);
