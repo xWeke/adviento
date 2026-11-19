@@ -408,7 +408,10 @@
   // ------------------------------------------------------------
   //  Secuencia de entrada: toc-toc → puertas → viaje de cámara
   // ------------------------------------------------------------
-  if (store.get("adviento-visto")) btnSaltar.hidden = false;
+  // "Saltar intro" siempre que la puerta esté abierta (desde el 1 de diciembre, también
+  // la primera vez); mientras dura la cuenta atrás lo esconde pintarCuenta
+  const puedeSaltar = () => true;
+  btnSaltar.hidden = false;
 
   // ------------------------------------------------------------
   //  Cuenta atrás: antes del 1 de diciembre la puerta sigue cerrada
@@ -433,7 +436,7 @@
       ctaPortada.textContent = textoCta;
       ctaPortada.classList.remove("cuenta");
       puerta.setAttribute("aria-label", ariaPuerta);
-      if (store.get("adviento-visto")) btnSaltar.hidden = false;
+      if (puedeSaltar()) btnSaltar.hidden = false;
       return;
     }
     puertaCerrada = true;
