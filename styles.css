@@ -591,25 +591,45 @@ body.en-calendario .aurora { opacity: 1; }
   50% { opacity: 1; }
 }
 
-/* Abierta: marca */
+/* Abierta: la casilla queda apagada (velo oscuro por encima) con un ✓ en la esquina */
+.casilla::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  border-radius: inherit;
+  background: rgba(14, 4, 7, 0.5);
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  pointer-events: none;
+}
+.casilla.abierta::before { opacity: 1; }
+
 .casilla .marca {
   position: absolute;
   top: 10px;
   right: 10px;
-  width: 24px;
-  height: 24px;
+  z-index: 4;
+  width: 26px;
+  height: 26px;
   display: grid;
   place-items: center;
   border-radius: 50%;
-  background: color-mix(in srgb, var(--num) 18%, transparent);
+  background: color-mix(in srgb, var(--num) 22%, transparent);
   color: var(--num);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 900;
   opacity: 0;
   transform: scale(0.5);
   transition: opacity 0.3s ease, transform 0.3s ease;
 }
 .casilla.abierta .marca { opacity: 1; transform: none; }
+
+/* Al cerrar la tarjeta: la casilla se apaga despacio y luego aparece el ✓ */
+.casilla.recien-abierta::before { animation: apagar 0.9s ease both; }
+.casilla.recien-abierta .marca { animation: aparece-marca 0.45s cubic-bezier(0.3, 1.5, 0.5, 1) 0.5s both; }
+@keyframes apagar { from { opacity: 0; } }
+@keyframes aparece-marca { from { opacity: 0; transform: scale(0.4); } }
 
 /* ---------- Cumpleaños (19): la única casilla dorada, con lazo ---------- */
 .casilla.gran-dia {
@@ -691,6 +711,53 @@ body.en-calendario .aurora { opacity: 1; }
   filter: drop-shadow(0 3px 3px rgba(0, 0, 0, 0.3));
   pointer-events: none;
 }
+
+/* ---------- Puertecita: la casilla se abre al pulsarla (ver abrirPuertecita en app.js) ---------- */
+.puertecita {
+  position: fixed;
+  z-index: 40;
+  pointer-events: none;
+  /* El hueco de detrás de la puerta */
+  background: #2a0a0e;
+  box-shadow: inset 0 6px 16px rgba(0, 0, 0, 0.55);
+}
+.puertecita-luz {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(circle at 50% 58%, #fff4d6 0%, #ffd27a 28%, #e88a3a 58%, rgba(122, 36, 18, 0.9) 100%);
+  box-shadow: 0 0 34px 6px rgba(255, 196, 110, 0.55);
+  opacity: 0;
+}
+.puertecita-hoja {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+.casilla.puertecita-cara,
+.puertecita-dorso {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  border-radius: inherit;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+.casilla.puertecita-cara { transform: none; transition: none; opacity: 1; }
+.puertecita-dorso {
+  border-radius: var(--radio);
+  filter: brightness(0.62);
+  transform: rotateY(180deg);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+.puertecita-dorso.regalo { transform: rotateX(180deg); }
+
+/* La tarjeta y su fondo oscuro entran suaves */
+.modal[open]::backdrop { animation: velo-modal 0.45s ease-out; }
+@keyframes velo-modal { from { opacity: 0; } }
 
 /* Bloqueada: al pulsar tiembla (después del 24 para que gane la cascada) */
 .casilla.visible.tiembla { animation: tiembla 0.45s ease; }

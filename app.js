@@ -711,8 +711,93 @@
     });
   }
 
-  function pulsarCasilla(el, n) {
-    if (!el.classList.contains("visible")) return;
+  // ------------------------------------------------------------
+  //  Puertecita: al abrir un día, la casilla se abre como una puerta pequeña (el 19, que es
+  //  un regalo, levanta la tapa) y deja ver la luz de dentro; de ahí sale la tarjeta.
+  //  Es una copia de la casilla en position: fixed encima de ella; al cerrar la tarjeta se
+  //  vuelve a cerrar y desaparece.
+  // ------------------------------------------------------------
+  let puertecita = null;
+  let abriendoDia = false;
+  const PERSPECTIVA = "perspective(700px)";
+
+  function abrirPuertecita(el) {
+    if (reducido) return;
+    const r = el.getBoundingClientRect();
+    const cs = getComputedStyle(el);
+    const esRegalo = el.classList.contains("gran-dia");
+    const giro = (g) => `${PERSPECTIVA} ${esRegalo ? `rotateX(${g}deg)` : `rotateY(${-g}deg)`}`;
+
+    const cont = document.createElement("div");
+    cont.className = "puertecita";
+    cont.setAttribute("aria-hidden", "true");
+    Object.assign(cont.style, {
+      left: `${r.left}px`,
+      top: `${r.top}px`,
+      width: `${r.width}px`,
+      height: `${r.height}px`,
+      borderRadius: cs.borderRadius,
+    });
+    cont.innerHTML = `<span class="puertecita-luz"></span><span class="puertecita-hoja"></span>`;
+    const luz = cont.firstChild;
+    const hoja = cont.lastChild;
+    hoja.style.transformOrigin = esRegalo ? "50% 0" : "0 50%";
+
+    // Cara de delante: la casilla tal cual estaba (sin marca de abierta ni halo de hoy)
+    const cara = el.cloneNode(true);
+    cara.classList.remove("hoy", "tiembla", "entra", "abierta");
+    cara.removeAttribute("aria-label");
+    cara.tabIndex = -1;
+    cara.style.setProperty("--celda", cs.getPropertyValue("--celda"));
+    cara.classList.add("puertecita-cara");
+    // Cara de detrás: el mismo color, más oscuro (se ve cuando la hoja pasa de 90°)
+    const dorso = document.createElement("span");
+    dorso.className = "puertecita-dorso" + (esRegalo ? " regalo" : "");
+    dorso.style.backgroundColor = cs.backgroundColor;
+    dorso.style.backgroundImage = cs.backgroundImage;
+    hoja.append(cara, dorso);
+
+    document.body.appendChild(cont);
+    el.style.visibility = "hidden";
+
+    const opciones = { duration: 700, easing: "cubic-bezier(0.3, 0.7, 0.2, 1)", fill: "forwards" };
+    hoja.animate(
+      [
+        { transform: giro(0) },
+        { transform: giro(-6), offset: 0.12 }, // pequeño tirón antes de abrirse
+        { transform: giro(118) },
+      ],
+      opciones
+    );
+    luz.animate([{ opacity: 0, transform: "scale(0.6)" }, { opacity: 1, transform: "none" }], {
+      ...opciones,
+      duration: 600,
+      delay: 80,
+      fill: "both",
+    });
+    puertecita = { cont, hoja, luz, el, giro };
+  }
+
+  async function cerrarPuertecita() {
+    const p = puertecita;
+    puertecita = null;
+    if (!p) return;
+    const opciones = { duration: 420, easing: "cubic-bezier(0.5, 0, 0.75, 0)", fill: "forwards" };
+    p.luz.animate([{ opacity: 1 }, { opacity: 0 }], opciones);
+    await p.hoja
+      .animate([{ transform: p.giro(118) }, { transform: p.giro(0) }], opciones)
+      .finished.catch(() => {});
+    p.el.style.visibility = "";
+    p.cont.remove();
+    // Al volver a cerrarse la puertecita, la casilla se apaga despacio y aparece el ✓
+    p.el.classList.remove("recien-abierta");
+    void p.el.offsetWidth;
+    p.el.classList.add("recien-abierta");
+    p.el.querySelector(".marca")?.addEventListener("animationend", () => p.el.classList.remove("recien-abierta"), { once: true });
+  }
+
+  async function pulsarCasilla(el, n) {
+    if (!el.classList.contains("visible") || abriendoDia || modal.open) return;
     if (!disponible(n)) {
       el.classList.remove("tiembla");
       void el.offsetWidth;
@@ -724,9 +809,14 @@
       mostrarToast(msg);
       return;
     }
+    abriendoDia = true;
+    abrirPuertecita(el); // antes de marcarla: la hoja es la casilla sin abrir
     marcarAbierto(n);
     el.classList.add("abierta");
+    // La tarjeta sale de la luz cuando la puerta va por la mitad
+    if (puertecita) await esperar(380);
     abrirModal(n, el);
+    abriendoDia = false;
   }
 
   // ------------------------------------------------------------
@@ -855,9 +945,10 @@
     cerrando = false;
   }
 
-  modal.addEventListener("close", () => {
+  modal.addEventListener("close", async () => {
     $(".modal-cuerpo", modal).replaceChildren(); // detiene vídeos/música
     document.body.classList.remove("bloqueado-scroll");
+    await cerrarPuertecita();
     casillaOrigen?.focus({ preventScroll: true });
   });
   modal.addEventListener("cancel", (e) => {
