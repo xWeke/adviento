@@ -928,6 +928,7 @@
     }
 
     function lanzar() {
+      Sonido.confeti();
       preparar();
       medir();
       alFrente();

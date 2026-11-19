@@ -2,6 +2,7 @@
 //  Audio del calendario (todo sintetizado con Web Audio, sin archivos)
 //   · Sonido.llamar()   → nudillos en la puerta (grabación real; si falla, sintetizados)
 //   · Sonido.abrir()    → crujido de bisagra + pestillo
+//   · Sonido.confeti()  → dos lanzaconfeti + brillo de campanitas (día del cumpleaños)
 //   · Sonido.musica     → caja de música navideña (o un mp3 propio, ver config.js)
 // ============================================================
 window.Sonido = (() => {
@@ -283,6 +284,99 @@ window.Sonido = (() => {
   }
 
   // ----------------------------------------------------------
+  //  Confeti: un "pop" por cada esquina (izquierda y derecha), campanitas que brillan
+  //  mientras suben y un susurro de papel al caer. Respeta el botón de silencio.
+  // ----------------------------------------------------------
+  function confeti() {
+    if (silenciada || !listo()) return;
+    const t = ctx.currentTime + 0.02;
+    const salida = ctx.createGain();
+    salida.gain.value = 0.9;
+    salida.connect(ctx.destination);
+    const lado = (pan) => {
+      if (!ctx.createStereoPanner) return salida;
+      const p = ctx.createStereoPanner();
+      p.pan.value = pan;
+      p.connect(salida);
+      return p;
+    };
+
+    // Lanzaconfeti: chasquido de ruido + golpe grave que cae
+    [[-0.7, 0], [0.7, 0.07]].forEach(([pan, dt]) => {
+      const destino = lado(pan);
+      const r = ctx.createBufferSource();
+      r.buffer = ruido(0.09);
+      const bp = ctx.createBiquadFilter();
+      bp.type = "bandpass";
+      bp.frequency.value = azar(1300, 1700);
+      bp.Q.value = 0.9;
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.0001, t + dt);
+      g.gain.exponentialRampToValueAtTime(0.55, t + dt + 0.003);
+      g.gain.exponentialRampToValueAtTime(0.001, t + dt + 0.08);
+      r.connect(bp).connect(g).connect(destino);
+      r.start(t + dt);
+      r.stop(t + dt + 0.1);
+
+      const o = ctx.createOscillator();
+      o.frequency.setValueAtTime(190, t + dt);
+      o.frequency.exponentialRampToValueAtTime(55, t + dt + 0.12);
+      const go = ctx.createGain();
+      go.gain.setValueAtTime(0.0001, t + dt);
+      go.gain.exponentialRampToValueAtTime(0.4, t + dt + 0.004);
+      go.gain.exponentialRampToValueAtTime(0.001, t + dt + 0.14);
+      o.connect(go).connect(destino);
+      o.start(t + dt);
+      o.stop(t + dt + 0.16);
+    });
+
+    // Campanitas: notas agudas de una escala pentatónica, repartidas a izquierda y derecha
+    const escala = [1568, 1760, 2093, 2349, 2637, 3136, 3520];
+    for (let i = 0; i < 16; i++) {
+      const ti = t + 0.12 + i * azar(0.05, 0.11);
+      const f = escala[(Math.random() * escala.length) | 0];
+      const destino = lado(azar(-0.8, 0.8));
+      const vol = 0.07 * (1 - i / 20);
+      [1, 2.76].forEach((mult, k) => {
+        const o = ctx.createOscillator();
+        o.type = "sine";
+        o.frequency.value = f * mult;
+        const g = ctx.createGain();
+        g.gain.setValueAtTime(0.0001, ti);
+        g.gain.exponentialRampToValueAtTime(k ? vol * 0.25 : vol, ti + 0.004);
+        g.gain.exponentialRampToValueAtTime(0.0001, ti + (k ? 0.25 : 0.7));
+        o.connect(g).connect(destino);
+        o.start(ti);
+        o.stop(ti + 0.75);
+      });
+    }
+
+    // Susurro de papel: ruido agudo que tiembla y se apaga mientras el confeti cae
+    const dur = 2.6;
+    const r = ctx.createBufferSource();
+    r.buffer = ruido(dur);
+    const hp = ctx.createBiquadFilter();
+    hp.type = "highpass";
+    hp.frequency.value = 4200;
+    const temblor = ctx.createGain();
+    temblor.gain.value = 0.5;
+    const lfo = ctx.createOscillator();
+    lfo.frequency.value = 13;
+    const lfoVol = ctx.createGain();
+    lfoVol.gain.value = 0.5;
+    lfo.connect(lfoVol).connect(temblor.gain);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t + 0.15);
+    g.gain.linearRampToValueAtTime(0.05, t + 0.5);
+    g.gain.linearRampToValueAtTime(0.0001, t + dur);
+    r.connect(hp).connect(temblor).connect(g).connect(salida);
+    r.start(t + 0.15);
+    lfo.start(t + 0.15);
+    r.stop(t + dur + 0.1);
+    lfo.stop(t + dur + 0.1);
+  }
+
+  // ----------------------------------------------------------
   //  Música: villancicos de dominio público en caja de música
   //  Formato: "NOTA:pulsos", R = silencio. (Jingle Bells, 1857; We Wish You a
   //  Merry Christmas, tradicional inglés.)
@@ -490,6 +584,7 @@ window.Sonido = (() => {
     desbloquear,
     llamar,
     abrir,
+    confeti,
     musica: {
       iniciar: arrancar,
       parar,
