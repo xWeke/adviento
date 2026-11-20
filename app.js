@@ -1120,21 +1120,44 @@
     const m = modal.getBoundingClientRect();
     const dx = t.left + t.width / 2 - (m.left + m.width / 2);
     const dy = t.top + t.height / 2 - (m.top + m.height / 2);
-    const s = Math.max(0.15, t.width / m.width);
-    // Sale de la casilla y vuelve a ella. Arranca/termina invisible (nada aparece de golpe) y
-    // la opacidad va más rápida que el movimiento: se ve entera casi todo el viaje.
-    const desde = { transform: `perspective(900px) translate(${dx}px, ${dy}px) scale(${s}) rotateX(25deg)`, opacity: 0 };
-    const hasta = { transform: "perspective(900px) translate(0, 0) scale(1) rotateX(0deg)", opacity: 1 };
-    if (inverso) modal.classList.add("cerrando"); // el velo oscuro se funde a la vez (CSS)
-    return modal
-      .animate(
-        inverso ? [hasta, { opacity: 1, offset: 0.55 }, desde] : [desde, { opacity: 1, offset: 0.3 }, hasta],
-        {
-          duration: inverso ? 460 : 640,
-          easing: inverso ? "cubic-bezier(0.45, 0, 0.7, 0.35)" : "cubic-bezier(0.16, 1, 0.3, 1)",
-        }
-      )
-      .finished.catch(() => {});
+    // La postal nace DENTRO de la ventana abierta: empieza del ancho del hueco (un poco más
+    // pequeña, como al fondo, sobre la luz) y recortada a su alto con clip-path, y de ahí sale
+    // creciendo. Al cerrar hace lo contrario y se apaga dentro del hueco.
+    // Dos tiempos: (1) asoma dentro del hueco, (2) sale creciendo hasta su sitio.
+    const radioCasilla = parseFloat(getComputedStyle(casillaOrigen).borderRadius) || 12;
+    // Estado "en el hueco" a escala k del hueco. El recorte va en coordenadas de la tarjeta
+    // sin escalar (alto del hueco / escala).
+    const enHueco = (k, opacity) => {
+      const s = Math.max(0.12, (t.width / m.width) * k);
+      const recorte = Math.max(0, (m.height - (t.height * k) / s) / 2);
+      return {
+        transform: `translate(${dx}px, ${dy}px) scale(${s})`,
+        clipPath: `inset(${recorte}px 0px ${recorte}px 0px round ${radioCasilla / s}px)`,
+        opacity,
+      };
+    };
+    const alFondo = enHueco(0.84, 0); // al fondo, sobre la luz
+    const llenaHueco = enHueco(1, 1); // del tamaño exacto de la ventana
+    // Al final el recorte queda holgado (negativo) para no cortar la sombra de la tarjeta
+    const fuera = { transform: "translate(0px, 0px) scale(1)", clipPath: "inset(-90px -90px -90px -90px round 104px)", opacity: 1 };
+    let fotogramas, duracion;
+    if (inverso) {
+      modal.classList.add("cerrando"); // el velo oscuro se funde a la vez (CSS)
+      fotogramas = [
+        { ...fuera, easing: "cubic-bezier(0.55, 0, 0.35, 1)" },
+        { ...llenaHueco, offset: 0.7, easing: "cubic-bezier(0.4, 0, 1, 1)" },
+        alFondo,
+      ];
+      duracion = 640;
+    } else {
+      fotogramas = [
+        { ...alFondo, easing: "cubic-bezier(0.2, 0.6, 0.35, 1)" },
+        { ...llenaHueco, offset: 0.24, easing: "cubic-bezier(0.45, 0, 0.15, 1)" },
+        fuera,
+      ];
+      duracion = 860;
+    }
+    return modal.animate(fotogramas, { duration: duracion }).finished.catch(() => {});
   }
 
   let cerrando = false;
