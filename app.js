@@ -654,6 +654,7 @@
   puerta.addEventListener("click", () => (puertaCerrada ? llamarAntesDeTiempo() : entrar()));
   btnSaltar.addEventListener("click", () => {
     if (animando || puertaCerrada) return;
+    Sonido.desbloquear(); // como al llamar: sin esto, en iPhone el confeti no podía bajar la música
     mostrarCalendario();
   });
   $("#volver").addEventListener("click", volverAPuerta);
@@ -845,6 +846,8 @@
       return;
     }
     abriendoDia = true;
+    // Día con confeti: preparar el audio AHORA, dentro del toque (el iPhone no deja después)
+    if (el.classList.contains("gran-dia")) Sonido.preparar();
     abrirPuertecita(el); // antes de marcarla: la hoja es la casilla sin abrir
     marcarAbierto(n);
     el.classList.add("abierta");

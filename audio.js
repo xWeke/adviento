@@ -590,6 +590,28 @@ window.Sonido = (() => {
     return volArchivo;
   }
 
+  // Llamar dentro del toque en una casilla: el iPhone solo deja reanudar el AudioContext
+  // en un gesto, y el confeti/bajada llega después (fuera del gesto). Si hará falta el
+  // gancho de Web Audio para bajar la música, se monta ya, antes del confeti.
+  function preparar() {
+    if (!ctx || silenciada) return;
+    const enganchar = () => {
+      const el = estado.audio;
+      if (!estado.sonando || !el || volArchivo || puedeCambiarVolumen(el)) return;
+      if (ganchoArchivo(el) && !el.paused) el.play().catch(() => {}); // que siga fluyendo tras reconectar
+    };
+    if (ctx.state !== "running") ctx.resume().then(enganchar, () => {});
+    else enganchar();
+  }
+
+  // Si el AudioContext se quedó parado (vuelta del segundo plano, llamada…) con la música
+  // pasando por él, se oiría cortada: se reanuda en el siguiente toque.
+  ["pointerdown", "touchend", "keydown"].forEach((e) =>
+    document.addEventListener(e, () => {
+      if (ctx && ctx.state !== "running" && estado.sonando && !document.hidden) ctx.resume().catch(() => {});
+    }, true)
+  );
+
   function agacharMusica(nivel = 0.2, mantener = 2.6) {
     if (!estado.sonando) return;
     const el = estado.audio;
@@ -649,6 +671,7 @@ window.Sonido = (() => {
     llamar,
     abrir,
     confeti,
+    preparar,
     musica: {
       iniciar: arrancar,
       parar,
