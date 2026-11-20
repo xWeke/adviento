@@ -113,6 +113,25 @@
     return hoy() >= fechaDia(n);
   }
 
+  // Fotos de las postales: se descargan y decodifican antes de abrir la tarjeta para que no
+  // aparezcan de golpe (y cambien su altura) con la tarjeta ya en pantalla.
+  const fotosListas = new Map();
+  function precargarFoto(n) {
+    const dia = CFG.dias[n];
+    if (!dia?.src || (dia.tipo !== "foto" && dia.tipo !== "vale")) return Promise.resolve();
+    if (!fotosListas.has(n)) {
+      const img = new Image();
+      img.src = dia.src;
+      fotosListas.set(n, img.decode().catch(() => {}));
+    }
+    return fotosListas.get(n);
+  }
+  // En reposo, las de los días ya abribles (así al pulsar ya están)
+  function precargarFotosDisponibles() {
+    const tarea = () => { for (let n = 1; n <= 24; n++) if (disponible(n)) precargarFoto(n); };
+    "requestIdleCallback" in window ? requestIdleCallback(tarea, { timeout: 3000 }) : setTimeout(tarea, 1500);
+  }
+
   function esHoy(n) {
     const h = hoy();
     return h.getFullYear() === CFG.anio && h.getMonth() === 11 && h.getDate() === n;
@@ -535,6 +554,7 @@
     // Con velo, el scroll de 1 px para Safari se deja para cuando se retira (fin)
     colorBarras("--fondo-cal", true, { remuestrear: !conDestello });
     window.scrollTo(0, 0);
+    precargarFotosDisponibles();
 
     // El fondo de puntos vuelve a su estado normal para el parallax del calendario
     bgDots.style.transform = "";
@@ -828,8 +848,11 @@
     abrirPuertecita(el); // antes de marcarla: la hoja es la casilla sin abrir
     marcarAbierto(n);
     el.classList.add("abierta");
-    // La tarjeta sale de la luz cuando la puerta va por la mitad
+    // La tarjeta sale de la luz cuando la puerta va por la mitad (y con su foto ya lista;
+    // si la red va lenta, como mucho se espera 1,5 s más)
+    const cargaFoto = precargarFoto(n);
     if (puertecita) await esperar(380);
+    await Promise.race([cargaFoto, esperar(1500)]);
     abrirModal(n, el);
     // Cumpleaños: confeti cuando la tarjeta termina de salir
     if (el.classList.contains("gran-dia")) setTimeout(Confeti.lanzar, 280);
@@ -972,7 +995,7 @@
     const img = document.createElement("img");
     img.src = src;
     img.alt = alt || "Foto";
-    img.loading = "lazy";
+    img.decoding = "sync"; // ya viene precargada (precargarFoto): que salga pintada desde el primer frame
     return img;
   }
 
