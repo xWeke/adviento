@@ -47,7 +47,7 @@ window.CONFIG = {
   // ----------------------------------------------------------
   dias: {
     1:  { tipo: "vale",    titulo: "una caja de Schoko-Bons", src: "assets/dia1.webp" },
-    2:  { tipo: "foto",    titulo: "Un recuerdo", texto: "Aquí irá una foto nuestra.", src: "" },
+    2:  { tipo: "vale",    titulo: "una vela", src: "assets/dia2.webp" },
     3:  { tipo: "cancion", titulo: "Nuestra canción", texto: "Ponla alto.", src: "" },
     4:  { tipo: "vale",    titulo: "un desayuno en la cama", texto: "Canjeable cualquier domingo." },
     5:  { tipo: "vale",    titulo: "una copa", src: "assets/dia5.webp" },
