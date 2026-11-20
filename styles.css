@@ -772,8 +772,11 @@ body.en-calendario .aurora { opacity: 1; }
 }
 
 /* La tarjeta y su fondo oscuro entran suaves */
-.modal[open]::backdrop { animation: velo-modal 0.45s ease-out; }
+.modal[open]::backdrop { animation: velo-modal 0.55s ease-out; }
 @keyframes velo-modal { from { opacity: 0; } }
+/* Al cerrar se funde a la vez que la tarjeta vuelve a su casilla (antes desaparecía de golpe) */
+.modal.cerrando::backdrop { animation: velo-modal-fuera 0.46s ease-in forwards; }
+@keyframes velo-modal-fuera { to { opacity: 0; } }
 
 /* Bloqueada: al pulsar tiembla (después del 24 para que gane la cascada) */
 .casilla.visible.tiembla { animation: tiembla 0.45s ease; }
